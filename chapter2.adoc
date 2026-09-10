@@ -93,10 +93,10 @@ Memory domains are a way of dividing the IOPMP entry array into different subarr
 
 [NOTE]
 ====
-Since the address encoding scheme of TOR refers to the previous entry's memory region, which may not be in the same memory domain, it can cause unexpected results. If the first entry of a memory domain selects TOR, the entry refers to the previous memory domain. When the previous memory domain is changed unexpectedly, the region of this entry will be altered. To prevent the unexpected change of memory region, software should
+An IOPMP entry _i_ whose address-matching mode is TOR takes its lower bound from IOPMP entry _i_-1. The two IOPMP entries need not belong to the same memory domain. When the first IOPMP entry of a memory domain selects TOR, its lower bound can therefore be owned by another memory domain, and reprogramming that memory domain silently changes the region it protects. To prevent the unexpected change of memory region, software should
 
-* avoid adopting TOR for the first entry of a memory domain; or
-* set an OFF for the last entry of a memory domain with the maximal address during programming the IOPMP.
+* avoid adopting TOR for the first IOPMP entry of a memory domain; or
+* set an OFF for the last IOPMP entry of a memory domain with the maximal address during programming the IOPMP.
 ====
 
 For example, a Network Interface Controller (NIC) typically utilizes multiple memory areas, such as a Receive (RX) data buffer, a Transmit (TX) data buffer, and a set of control registers. These distinct regions, due to their association with the single NIC device and similar access requirements, can be efficiently consolidated into a single Memory Domain. If a processor (or other bus agent) is given full control over the NIC's operation, that agent may then be explicitly associated with this MD.
