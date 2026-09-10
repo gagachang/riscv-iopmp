@@ -127,7 +127,7 @@ Every `SRCMD_EN(_s_)` has a 1-bit lock field, `SRCMD_EN(_s_).l`, which locks `SR
 [#MDCFG_TABLE]
 === MDCFG Table
 
-The MDCFG Table is used to map a memory domain to its own entries. It can be viewed as a partition of all entries in the IOPMP. The MDCFG defines which memory domain every entry belongs to. An entry can belong to at most one memory domain, but a memory domain can own zero or more entries. After retrieving all related entries, an IOPMP checks the transaction according to them.
+The MDCFG Table is used to map a memory domain to its own IOPMP entries. It can be viewed as a partition of the IOPMP entry array. The MDCFG defines which memory domain every entry belongs to. An entry can belong to at most one memory domain, but a memory domain can own zero or more entries. After retrieving all related entries, an IOPMP checks the transaction according to them.
 
 In the MDCFG Table, every memory domain _m_ has a register, `MDCFG(_m_)`. Field `MDCFG(_m_).t` represents the upper bound (not included) and field `MDCFG(_m_-1).t` represents the lower bound (included) for _m_ > 0. They form the index range of IOPMP entries belonging to the memory domain _m_. That is,
 
@@ -156,7 +156,7 @@ For portability, programmers should ensure the MDCFG Table has a proper setting 
 
 [#IOPMP_priority_and_matching_logic]
 === Priority and Matching Logic
-The IOPMP uses entry-based permission checking to determine whether transactions are allowed or denied.
+The IOPMP checks each transaction against its IOPMP entries to determine whether the transaction is allowed or denied.
 
 The error type identifies the cause of an illegal transaction and is recorded in `ERR_INFO.etype` when the error capture record is implemented. Error reactions are described in <<#ERROR_REACTIONS,Error Reactions>>, and the error-type encodings are summarized in <<#ERROR_TYPES,Summary of error types>>.
 
@@ -164,10 +164,10 @@ When a transaction arrives at an IOPMP, the IOPMP first checks whether the RRID 
 
 NOTE: Whether an RRID is legal is implementation-defined, even though it < `HWCFG1.rrid_num`.
 
-For a legal RRID, the IOPMP determines the applicable entries in the following order:
+For a legal RRID, the IOPMP determines the applicable IOPMP entries in the following order:
 
 1. The IOPMP looks up the SRCMD Table using the RRID to identify the memory domains associated with the requester.
-2. The IOPMP looks up the MDCFG Table using the associated memory domains to identify the entries belonging to those memory domains.
+2. The IOPMP looks up the MDCFG Table using the associated memory domains to identify the IOPMP entries belonging to those memory domains.
 3. The IOPMP applies the entry priority and matching rules below to those entries.
 
 IOPMP entries are prioritized according to their index values. Entries with lower indices are assigned a higher priority. When multiple entries match a transaction, the entry with the lowest index (highest priority) takes precedence.
