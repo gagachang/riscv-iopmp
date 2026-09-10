@@ -16,12 +16,12 @@ The Full Model is the default IOPMP configuration with complete SRCMD and MDCFG 
 
 *Configuration*: *srcmd_fmt*=0, *mdcfg_fmt*=1, where _k_ = (*md_entry_num* + 1)
 
-The Rapid-k Model simplifies MDCFG Table lookup by implementing a fixed entry allocation scheme where each memory domain contains exactly _k_ entries. This eliminates the need for MDCFG Table lookups, reducing access latency and hardware complexity while maintaining full SRCMD Table flexibility.
+The Rapid-k Model simplifies MDCFG Table lookup by implementing a fixed allocation scheme where each memory domain is assigned exactly _k_ entry indices. This eliminates the need for MDCFG Table lookups, reducing access latency and hardware complexity while maintaining full SRCMD Table flexibility.
 
 *Characteristics*:
 
 * Full SRCMD Table with arbitrary RRID-to-MD associations
-* Simplified MDCFG with constant _k_ entries per MD
+* Simplified MDCFG with constant _k_ entry indices per MD
 * Direct calculation: entry index = MD index × _k_ + offset
 * Reduced MDCFG lookup latency
 * Supports SPS extension
@@ -69,12 +69,12 @@ The Isolation Model implements direct RRID-to-MD mapping where RRID _i_ exclusiv
 
 *Configuration*: *srcmd_fmt*=1, *mdcfg_fmt*=1, where _k_ = (*md_entry_num* + 1)
 
-The Compact-k Model maximizes area efficiency by combining both SRCMD and MDCFG simplifications. It implements direct RRID-to-MD mapping with fixed _k_ entries per memory domain, eliminating both table lookup mechanisms. This represents the most area-optimized IOPMP configuration.
+The Compact-k Model maximizes area efficiency by combining both SRCMD and MDCFG simplifications. It implements direct RRID-to-MD mapping with fixed _k_ entry indices per memory domain, eliminating both table lookup mechanisms. This represents the most area-optimized IOPMP configuration.
 
 *Characteristics*:
 
 * Direct RRID-to-MD mapping (RRID _i_ → MD _i_)
-* Fixed _k_ entries per MD with constant allocation
+* Fixed _k_ entry indices per MD with constant allocation
 * No SRCMD Table implementation
 * Simplified MDCFG with constant entry allocation
 * Minimum hardware resource utilization
