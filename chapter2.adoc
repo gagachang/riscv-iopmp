@@ -156,7 +156,7 @@ For portability, programmers should ensure the MDCFG table has a proper setting 
 
 [#TRANSACTION_CHECKING]
 === Transaction Checking
-When a transaction arrives at an IOPMP, the IOPMP first checks whether the RRID carried by the transaction is legal. If the RRID is illegal, the transaction is illegal with error type = "Unknown RRID" (0x06); see <<#ERROR_REACTIONS,Error Reactions>> for the error types.
+When a transaction arrives at an IOPMP, the IOPMP first checks whether the RRID carried by the transaction is legal. If the RRID is illegal, the transaction is illegal with error type = "Unknown RRID" (0x06); see <<#ERROR_REPORTING,Error Reporting>> for the error types.
 
 NOTE: Whether an RRID is legal is implementation-defined, even though it < `HWCFG1.rrid_num`.
 
@@ -165,6 +165,8 @@ For a legal RRID, the IOPMP checks the transaction in the following steps:
 1. The IOPMP looks up the <<#SRCMD_TABLE,SRCMD table>> to identify the memory domains associated with the RRID.
 2. The IOPMP looks up the <<#MDCFG_TABLE,MDCFG table>> to identify the IOPMP entries belonging to those memory domains.
 3. The IOPMP checks the transaction against those IOPMP entries, using their priorities to select the matching entry, as described in <<#ENTRY_PRIORITY,IOPMP Entry Priority>> and <<#ENTRY_MATCHING,IOPMP Entry Matching>>.
+
+An illegal transaction is reported as described in <<#ERROR_REPORTING,Error Reporting>>.
 
 [#IOPMP_BLOCK_DIAGRAM]
 .An example block diagram of an IOPMP. The IOPMP takes the RRID, the transaction type (R/W/X), and the request range (ADDR/LEN) of each transaction. The SRCMD table maps the RRID to MD indexes, the MDCFG table maps the MD indexes to entry indexes, and the entry array checks the transaction against those IOPMP entries. When the check fails, the IOPMP generates an error response (ERR), an interrupt (IRQ), and/or an error record.
@@ -200,38 +202,13 @@ To grant an AMO transaction permission, both read access permission and write ac
 Some AMO implementations of I/O agents are using a non-atomic read-modify-write sequence which could contain a read access transaction and a write access transaction, not a single AMO transaction. Therefore, IOPMP possibly captures error type = "illegal read access" (0x01) when read permission for the read-modify-write sequence from the I/O agents is not granted.
 ====
 
-[#ERROR_REACTIONS]
-=== Error Reactions
-Upon detecting an illegal transaction, the IOPMP could initiate one or more of the following actions:
-
-* Trigger an interrupt to notify the system of the violation.
-
-* Return an implementation-defined bus error or a successful response with an implementation-defined value from receiver ports.
-
-* Log the error details in IOPMP error record registers.
-
-IOPMP can trigger an interrupt on an access violation. The `ERR_CFG.ie` bit serves as the global interrupt enable configuration bit. The interrupt pending indication is equivalent to the error valid indication; both are flagged through the `ERR_INFO.v` bit. On an illegal transaction, an interrupt is triggered if the global interrupt is enabled (`ERR_CFG.ie` = 1).
-
-Transactions that violate the IOPMP rule will by default yield a bus error. The bus error response behavior on an IOPMP violation can be configured globally via the `ERR_CFG` register. The IOPMP will signal the bus to the presence of a violation but will suppress the bus error if `ERR_CFG.rs` is implemented and set to 1 on a violation. User-defined suppression behavior allows, for example, a read response of 0x0.
-
-For error type = "User-defined error" (0x0E, 0x0F), behavior of interrupt and error response is user-defined.
-
-The error capture record maintains the specifics of the first illegal access detected, except for the condition:
-
-* no interrupt regarding the access is triggered, and
-* no bus error is returned.
-
-An error capture only occurs when there is no pending error, that is, `ERR_INFO.v` = ‘0’. If a pending error exists (`v` = ‘1’), the record will not be updated, even if a new illegal access is detected. In other words, `v` indicates whether the content of the capture record is valid and should be intentionally cleared in order to capture subsequent illegal accesses. Software acknowledges the captured violation by writing 1 to `ERR_INFO.v`, which clears the bit and reactivates the recorder.
-The error capture record ((`ERR_INFO.ttype`, `ERR_INFO.etype`, `ERR_REQADDR`, `ERR_REQADDRH`, `ERR_REQID` and `ERR_USER(0)` ~ `ERR_USER(7)`)) is optional.
-If it is not implemented, `HWCFG0.no_err_rec` must be wired to one.
-It is possible to implement the error capture record without the error entry index record (`ERR_REQID.eid`).
-In this case, `eid` must be wired to 0xffff.
-
-The error type identifies the cause of an illegal transaction and is recorded in `ERR_INFO.etype` when the error capture record is implemented. The following table summarizes the error types:
+[#ERROR_REPORTING]
+=== Error Reporting
+A transaction that fails any check described in <<#TRANSACTION_CHECKING,Transaction Checking>> is an illegal transaction. This specification also refers to an illegal transaction as a violation. The error type identifies the cause of an illegal transaction. The following table summarizes the error types:
 
 [#ERROR_TYPES]
 .Summary of error types.
-[%autowidth, cols="<1,<5", options="header"]
+[%autowidth, float="center", align="center", cols="<1,<5", options="header"]
 |===
  2+| Error type
    |0x00        | No error
@@ -245,3 +222,32 @@ The error type identifies the cause of an illegal transaction and is recorded in
    |0x0E ~ 0x0F | User-defined error
 
 |===
+
+On an illegal transaction, the IOPMP:
+
+* responds to the requester, as described in <<#ERROR_RESPONSE,Error Response>>;
+* triggers an interrupt if the interrupt is enabled, as described in <<#ERROR_INTERRUPT,Interrupt>>; and
+* captures the details of the illegal transaction, including its error type, in the error capture record if the record is implemented and the conditions in <<#ERROR_CAPTURE_RECORD,Error Capture Record>> are met.
+
+Software configures the response and the interrupt through `ERR_CFG`, and extensions such as <<#PEIS_PEES,Per-entry Interrupt/Bus Error Suppression>> and <<#MSI,Message-Signaled Interrupts (MSI) Extension>> can refine them. For error type = "User-defined error" (0x0E, 0x0F), the interrupt and the error response are user-defined.
+
+[#ERROR_RESPONSE]
+==== Error Response
+On an illegal transaction, the IOPMP by default returns an implementation-defined error, such as a bus error, to the requester through the receiver port. If `ERR_CFG.rs` is implemented and set to 1, the IOPMP suppresses the bus error and instead returns a successful response with an implementation-defined value, for example, a read response of 0x0.
+
+[#ERROR_INTERRUPT]
+==== Interrupt
+On an illegal transaction, the IOPMP triggers an interrupt if the global interrupt enable bit, `ERR_CFG.ie`, is set to 1. The interrupt pending indication is equivalent to the error valid indication; both are flagged through `ERR_INFO.v` (see <<#ERROR_CAPTURE_RECORD,Error Capture Record>>).
+
+[#ERROR_CAPTURE_RECORD]
+==== Error Capture Record
+The error capture record (`ERR_INFO.ttype`, `ERR_INFO.etype`, `ERR_REQADDR`, `ERR_REQADDRH`, `ERR_REQID`, and `ERR_USER(0)` ~ `ERR_USER(7)`) holds the details of the first captured illegal transaction. `ERR_INFO.v` indicates whether the record holds valid content. The IOPMP sets `ERR_INFO.v` when it captures an illegal transaction. The bit remains set until software acknowledges the captured illegal transaction by writing 1 to `ERR_INFO.v`, which clears the bit and reactivates the recorder.
+
+The IOPMP captures an illegal transaction only if:
+
+* the IOPMP triggers an interrupt or returns a bus error for the transaction; and
+* `ERR_INFO.v` = 0, that is, the previously captured illegal transaction, if any, has been acknowledged.
+
+While `ERR_INFO.v` = 1, the record is not updated, even if a new illegal transaction is detected.
+
+The error capture record is optional. If it is not implemented, `HWCFG0.no_err_rec` must be wired to one. It is possible to implement the error capture record without the error IOPMP entry index record (`ERR_REQID.eid`). In this case, `eid` must be wired to 0xffff.
