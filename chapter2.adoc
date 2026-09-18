@@ -154,26 +154,30 @@ Examples of implementation-defined behaviors for handling improper MDCFG setting
 For portability, programmers should ensure the MDCFG table has a proper setting during the runtime. In the case that the process of programming or initializing the MDCFG table causes an improper setting to occur transiently, software can deassociate affected MDs in the SRCMD table before programming the MDCFG table to avoid security issues. Even though the procedure may introduce extra steps, the table is not subject to change at such a high frequency as to hurt overall performance. Thus, the specification requires programmers to maintain proper settings instead of requiring specific hardware behaviors on improper settings.
 ====
 
-[#IOPMP_priority_and_matching_logic]
-=== Priority and Matching Logic
-The IOPMP checks each transaction against its IOPMP entries to determine whether the transaction is allowed or denied.
-
-The error type identifies the cause of an illegal transaction and is recorded in `ERR_INFO.etype` when the error capture record is implemented. Error reactions are described in <<#ERROR_REACTIONS,Error Reactions>>, and the error-type encodings are summarized in <<#ERROR_TYPES,Summary of error types>>.
-
-When a transaction arrives at an IOPMP, the IOPMP first checks whether the RRID carried by the transaction is legal. If the RRID is illegal, the transaction is illegal with error type = "Unknown RRID" (0x06).
+[#TRANSACTION_CHECKING]
+=== Transaction Checking
+When a transaction arrives at an IOPMP, the IOPMP first checks whether the RRID carried by the transaction is legal. If the RRID is illegal, the transaction is illegal with error type = "Unknown RRID" (0x06); see <<#ERROR_REACTIONS,Error Reactions>> for the error types.
 
 NOTE: Whether an RRID is legal is implementation-defined, even though it < `HWCFG1.rrid_num`.
 
-For a legal RRID, the IOPMP determines the applicable IOPMP entries in the following order:
+For a legal RRID, the IOPMP checks the transaction in the following steps:
 
-1. The IOPMP looks up the SRCMD table using the RRID to identify the memory domains associated with the requester.
-2. The IOPMP looks up the MDCFG table using the associated memory domains to identify the IOPMP entries belonging to those memory domains.
-3. The IOPMP applies the entry priority and matching rules below to those entries.
+1. The IOPMP looks up the <<#SRCMD_TABLE,SRCMD table>> to identify the memory domains associated with the RRID.
+2. The IOPMP looks up the <<#MDCFG_TABLE,MDCFG table>> to identify the IOPMP entries belonging to those memory domains.
+3. The IOPMP checks the transaction against those IOPMP entries, using their priorities to select the matching entry, as described in <<#ENTRY_PRIORITY,IOPMP Entry Priority>> and <<#ENTRY_MATCHING,IOPMP Entry Matching>>.
 
+[#IOPMP_BLOCK_DIAGRAM]
+.An example block diagram of an IOPMP. The IOPMP takes the RRID, the transaction type (R/W/X), and the request range (ADDR/LEN) of each transaction. The SRCMD table maps the RRID to MD indexes, the MDCFG table maps the MD indexes to entry indexes, and the entry array checks the transaction against those IOPMP entries. When the check fails, the IOPMP generates an error response (ERR), an interrupt (IRQ), and/or an error record.
+image::images/iopmp_unit_block_diagram.png[]
+
+[#ENTRY_PRIORITY]
+==== IOPMP Entry Priority
 IOPMP entries are prioritized according to their index values. Entries with lower indices are assigned a higher priority. When multiple entries match a transaction, the entry with the lowest index (highest priority) takes precedence.
 
-NOTE: The specification uses priority-based entry matching to provide deterministic behavior. Entries with lower indices have higher priority and take precedence when multiple entries match a transaction. Non-prioritized entries are supported for specific use cases, with their detailed behavior documented in <<#NON_PRIORITY_ENTRIES,Non-priority IOPMP entries>>.
+NOTE: The specification uses priority-based entry matching to provide deterministic behavior. Non-prioritized entries are supported for specific use cases, with their detailed behavior documented in <<#NON_PRIORITY_ENTRIES,Non-priority IOPMP entries>>.
 
+[#ENTRY_MATCHING]
+==== IOPMP Entry Matching
 An entry qualifies as a matching entry for an incoming transaction if:
 
 * Its region covers any byte of the transaction,
@@ -195,10 +199,6 @@ To grant an AMO transaction permission, both read access permission and write ac
 ====
 Some AMO implementations of I/O agents are using a non-atomic read-modify-write sequence which could contain a read access transaction and a write access transaction, not a single AMO transaction. Therefore, IOPMP possibly captures error type = "illegal read access" (0x01) when read permission for the read-modify-write sequence from the I/O agents is not granted.
 ====
-
-[#IOPMP_BLOCK_DIAGRAM]
-.an example block diagram of an IOPMP. It illustrates the checking flow of an IOPMP. This IOPMP takes three inputs: RRID, the transaction type (read/write/instruction fetch), and the request range (address/len). It first looks up the SRCMD table according to the RRID carried by the incoming transaction to retrieve associated MD indexes. By the MD indexes, the IOPMP looks up the MDCFG table to get the belonging entry indexes. The final step checks the access right according to the above entry indexes and corresponding permissions. An interrupt, an error response, and/or a record is generated once the transaction fails the permission check in the step.
-image::images/iopmp_unit_block_diagram.png[]
 
 [#ERROR_REACTIONS]
 === Error Reactions
@@ -227,7 +227,7 @@ If it is not implemented, `HWCFG0.no_err_rec` must be wired to one.
 It is possible to implement the error capture record without the error entry index record (`ERR_REQID.eid`).
 In this case, `eid` must be wired to 0xffff.
 
-The following table is a summary of error types:
+The error type identifies the cause of an illegal transaction and is recorded in `ERR_INFO.etype` when the error capture record is implemented. The following table summarizes the error types:
 
 [#ERROR_TYPES]
 .Summary of error types.
