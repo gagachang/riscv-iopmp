@@ -37,7 +37,7 @@ If an optional register is not implemented, the behavior is implementation-defin
 
 3+|{set:cellbgcolor:#D3D3D3} MDCFG Table,  _m_ = 0...`HWCFG0.md_num`-1
 |{set:cellbgcolor:#FFFFFF}
-0x0800 + (_m_) × 4 | `MDCFG(_m_)`  |MD config register, which specifies the indices of IOPMP entries belonging to a MD.
+0x0800 + (_m_) × 4 | `MDCFG(_m_)`  |MD config register, which specifies the indices of IOPMP entries belonging to an MD.
 
 3+|{set:cellbgcolor:#D3D3D3} SRCMD Table, _s_ = 0...`HWCFG1.rrid_num`-1
 |{set:cellbgcolor:#FFFFFF}
