@@ -120,7 +120,7 @@ An IOPMP entry _i_ whose address-matching mode is TOR takes its lower bound from
 [#SRCMD_TABLE]
 === SRCMD Table
 
-The SRCMD table is an array indexed by RRID that associates each requester with its memory domains. The table uses a bitmap approach where each RRID can be associated with multiple memory domains. An IOPMP instance can support up to 65,535 RRIDs; the actual number of RRIDs can be implementation-defined and is indicated in `HWCFG1.rrid_num`. The SRCMD table defines the mapping from an RRID to its associated MDs.
+The SRCMD table is an array indexed by RRID that associates each RRID with its memory domains. The table uses a bitmap approach where each RRID can be associated with multiple memory domains. An IOPMP instance can support up to 65,535 RRIDs; the actual number of RRIDs can be implementation-defined and is indicated in `HWCFG1.rrid_num`.
 
 The register `SRCMD_EN(_s_)` must be implemented for each existing RRID _s_. Every bit in the 31-bit field `SRCMD_EN(_s_).md` indicates a memory domain. Bit _j_ in `SRCMD_EN(_s_).md` indicates if MD _j_ is associated with RRID _s_. If the number of MDs is more than 31, the register `SRCMD_ENH(_s_)` and its 32-bit field `SRCMD_ENH(_s_).mdh` can be implemented to support up to 63 memory domains. Bit _j_ in `SRCMD_ENH(_s_).mdh` indicates if MD (_j_ + 31) is associated with RRID _s_. For unimplemented memory domains, the corresponding bits should be hardwired read-only zero.
 
