@@ -120,7 +120,7 @@ An IOPMP entry _i_ whose address-matching mode is TOR takes its lower bound from
 [#SRCMD_TABLE]
 === SRCMD Table
 
-The SRCMD table is an array indexed by RRID that associates each requester with its memory domains. The table uses a bitmap approach where each RRID can be associated with multiple memory domains. When an IOPMP receives a transaction with RRID _s_, the IOPMP first looks up the SRCMD table to find out all the memory domains associated with that RRID. An IOPMP instance can support up to 65,535 RRIDs; the actual number of RRIDs can be implementation-defined and is indicated in `HWCFG1.rrid_num`. The SRCMD table defines the mapping from an RRID to its associated MDs.
+The SRCMD table is an array indexed by RRID that associates each requester with its memory domains. The table uses a bitmap approach where each RRID can be associated with multiple memory domains. An IOPMP instance can support up to 65,535 RRIDs; the actual number of RRIDs can be implementation-defined and is indicated in `HWCFG1.rrid_num`. The SRCMD table defines the mapping from an RRID to its associated MDs.
 
 The register `SRCMD_EN(_s_)` must be implemented for each existing RRID _s_. Every bit in the 31-bit field `SRCMD_EN(_s_).md` indicates a memory domain. Bit _j_ in `SRCMD_EN(_s_).md` indicates if MD _j_ is associated with RRID _s_. If the number of MDs is more than 31, the register `SRCMD_ENH(_s_)` and its 32-bit field `SRCMD_ENH(_s_).mdh` can be implemented to support up to 63 memory domains. Bit _j_ in `SRCMD_ENH(_s_).mdh` indicates if MD (_j_ + 31) is associated with RRID _s_. For unimplemented memory domains, the corresponding bits should be hardwired read-only zero.
 
@@ -130,9 +130,7 @@ Every `SRCMD_EN(_s_)` has a 1-bit lock field, `SRCMD_EN(_s_).l`, which locks `SR
 [#MDCFG_TABLE]
 === MDCFG Table
 
-The MDCFG table is used to map a memory domain to its own IOPMP entries. It can be viewed as a partition of the IOPMP entry array. The MDCFG table defines which memory domain every IOPMP entry belongs to. An IOPMP entry can belong to at most one memory domain, but a memory domain can own zero or more IOPMP entries. After retrieving all related IOPMP entries, an IOPMP checks the transaction according to them.
-
-In the MDCFG table, every memory domain _m_ has a register, `MDCFG(_m_)`. Field `MDCFG(_m_).t` represents the upper bound (not included) and field `MDCFG(_m_-1).t` represents the lower bound (included) for _m_ > 0. They form the index range of IOPMP entries belonging to the memory domain _m_. That is,
+The MDCFG table maps each memory domain to its IOPMP entries. Every memory domain _m_ has a register, `MDCFG(_m_)`, in the table. Field `MDCFG(_m_).t` represents the upper bound (not included) and field `MDCFG(_m_-1).t` represents the lower bound (included) for _m_ > 0. They form the index range of IOPMP entries belonging to the memory domain _m_. That is,
 
 
 * an entry with index _j_ belongs to MD _m_ if `MDCFG(_m_ - 1).t` {le} _j_ < `MDCFG(_m_).t`, where _m_ > 0.
