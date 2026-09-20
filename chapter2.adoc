@@ -87,7 +87,7 @@ TOR is the only mode whose region depends on another entry, and the entry it dep
 
 [#MEMORY_DOMAIN]
 === Memory Domain
-A Request-Role-ID (RRID) serves as an abstract identifier for a transaction requester, representing one or more requesters that are assigned an identical set of potential access permissions. Conversely, a Memory Domain (MD) is an abstract construct representing a transaction destination. Its primary purpose is to logically group a set of memory regions that share a common functional or security objective, thereby simplifying the subsequent management. MDs are indexed starting from zero.
+A Memory Domain (MD) is an abstract construct representing a transaction destination. Its primary purpose is to logically group a set of memory regions that share a common functional or security objective, thereby simplifying the subsequent management. MDs are indexed starting from zero.
 
 Memory domains are a way of dividing the IOPMP entry array into different subarrays. Each subarray is a memory domain. Each IOPMP entry can belong to at most one memory domain, while a memory domain could have multiple IOPMP entries.
 
