@@ -99,13 +99,13 @@ An IOPMP entry _i_ whose address-matching mode is TOR takes its lower bound from
 * set an OFF for the last IOPMP entry of a memory domain with the maximal address during programming the IOPMP.
 ====
 
-For example, a Network Interface Controller (NIC) typically utilizes multiple memory areas, such as a Receive (RX) data buffer, a Transmit (TX) data buffer, and a set of control registers. These distinct regions, due to their association with the single NIC device and similar access requirements, can be efficiently consolidated into a single Memory Domain. If a processor (or other bus agent) is given full control over the NIC's operation, that agent may then be explicitly associated with this MD.
+For example, a Network Interface Controller (NIC) typically utilizes multiple memory areas, such as a Receive (RX) data buffer, a Transmit (TX) data buffer, and a set of control registers. These distinct regions, due to their association with the single NIC device and similar access requirements, can be efficiently consolidated into a single memory domain. If a processor (or other bus agent) is given full control over the NIC's operation, that agent may then be explicitly associated with this MD.
 
-It's important to note that, generally speaking, a single RRID can be associated with multiple memory domains (MDs), and a MD can be associated with multiple RRIDs. The SRCMD table is one of the fundamental structures in IOPMP to indicate associations between RRIDs and MDs, which will be introduced in <<#SRCMD_TABLE, SRCMD Table>>.
+It's important to note that, generally speaking, a single RRID can be associated with multiple memory domains (MDs), and an MD can be associated with multiple RRIDs. The SRCMD table is one of the fundamental structures in IOPMP to indicate associations between RRIDs and MDs, which will be introduced in <<#SRCMD_TABLE, SRCMD Table>>.
 
-The MDCFG table is one of the fundamental structures in IOPMP to define which entries belong to a MD, which will be introduced in <<#MDCFG_TABLE, MDCFG Table>>.
+The MDCFG table is one of the fundamental structures in IOPMP to define which entries belong to an MD, which will be introduced in <<#MDCFG_TABLE, MDCFG Table>>.
 
-An RRID associated with a MD may not have full permissions on all memory regions of the MD, because the permission of each region is defined in the corresponding IOPMP entry.
+An RRID associated with an MD may not have full permissions on all memory regions of the MD, because the permission of each region is defined in the corresponding IOPMP entry.
 
 When an RRID is associated with a memory domain, it is also inherently associated with all the entries that belong to that memory domain.
 <<EXAMPLE_RRID2ENTRY>> illustrates an example of relations between RRIDs, memory domains, and IOPMP entries. In the example, RRID 0 is associated with entry 0, 1, 2, 3, 4, and RRID 1 is associated with entry 0, 1, 2, 5, 6.
