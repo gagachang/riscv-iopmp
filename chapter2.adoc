@@ -170,7 +170,7 @@ For a legal RRID, the IOPMP checks the transaction in the following steps:
 An illegal transaction is reported as described in <<#ERROR_REPORTING,Error Reporting>>.
 
 [#IOPMP_BLOCK_DIAGRAM]
-.An example block diagram of an IOPMP. The IOPMP takes the RRID, the transaction type (R/W/X), and the request range (ADDR/LEN) of each transaction. The SRCMD table maps the RRID to MD indexes, the MDCFG table maps the MD indexes to entry indexes, and the entry array checks the transaction against those IOPMP entries. When the check fails, the IOPMP generates an error response (ERR), an interrupt (IRQ), and/or an error record.
+.An example block diagram of an IOPMP. The IOPMP takes the RRID, the transaction type (R/W/X), and the request range (ADDR/LEN) of each transaction. The SRCMD table maps the RRID to MD indices, the MDCFG table maps the MD indices to entry indices, and the entry array checks the transaction against those IOPMP entries. When the check fails, the IOPMP generates an error response (ERR), an interrupt (IRQ), and/or an error record.
 image::images/iopmp_unit_block_diagram.png[]
 
 [#ENTRY_PRIORITY]
