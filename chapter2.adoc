@@ -141,19 +141,9 @@ The MDCFG table maps each memory domain to its IOPMP entries. Every memory domai
 This specification does not require `MDCFG(_m_).t` to be bounded by `HWCFG1.entry_num`, so a memory domain can have a range of IOPMP entry indices that extends past the end of the IOPMP entry array. Indices beyond the array select no entry; see <<#IOPMP_ENTRY, IOPMP Entries>>. Requiring the bound would add a comparison against `HWCFG1.entry_num` on every write to `MDCFG(_m_)`, and would not improve security, because the indices beyond the array contribute no rule and therefore cannot grant access.
 ====
 
-Programmers should maintain proper settings in the MDCFG table when `HWCFG0.enable` is set, where `MDCFG(_m_ + 1).t` should be greater than or equal to `MDCFG(_m_).t` for any legal MD m. Otherwise, the MDCFG table has an improper setting, that is, there exist two legal MDs _m_ and _k_, `MDCFG(_k_).t` > `MDCFG(_m_).t` for _k_ < _m_. In this case, the specification denotes the MD _m_ as having an improper setting.
+The MDCFG table has a proper setting if `MDCFG(_m_-1).t` {le} `MDCFG(_m_).t` for every _m_ with 0 < _m_ < `HWCFG0.md_num`.
 
-When the MDCFG table has an improper setting, the resulting association of IOPMP entries to MDs is implementation-defined, but the following conditions must be held:
-
-* an entry must belong to at most one memory domain; and
-* the index of an entry in a lower-indexed memory domain must be lower than that in a higher-indexed memory domain.
-
-Examples of implementation-defined behaviors for handling improper MDCFG settings are provided in <<#IMPROPER_MDCFG_REFERENCE,Reference Behaviors of Improper Settings on MDCFG Table>>.
-
-[NOTE]
-====
-For portability, programmers should ensure the MDCFG table has a proper setting during the runtime. In the case that the process of programming or initializing the MDCFG table causes an improper setting to occur transiently, software can deassociate affected MDs in the SRCMD table before programming the MDCFG table to avoid security issues. Even though the procedure may introduce extra steps, the table is not subject to change at such a high frequency as to hurt overall performance. Thus, the specification requires programmers to maintain proper settings instead of requiring specific hardware behaviors on improper settings.
-====
+Otherwise, the MDCFG table has an improper setting. Let _m_ be the lowest index for which `MDCFG(_m_-1).t` > `MDCFG(_m_).t`. MDs below _m_ retain their IOPMP entries as defined above, and no IOPMP entry belongs to MD _m_ or any higher-indexed MD. Equivalently, an IOPMP entry with index _i_ {ge} `MDCFG(_m_-1).t` belongs to no MD.
 
 [#MDCFG_PROGRAMMING_GUIDE]
 ==== Updating the MDCFG Table
