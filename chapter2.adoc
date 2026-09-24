@@ -98,7 +98,7 @@ Memory domains are a way of dividing the IOPMP entry array into different subarr
 An RRID reaches IOPMP entries through memory domains. The relations among the three are as follows:
 
 * RRID to memory domain: many-to-many. An RRID can be associated with multiple memory domains, and a memory domain can be associated with multiple RRIDs. In the baseline format, the <<#SRCMD_TABLE,SRCMD table>> configures this association.
-* Memory domain to IOPMP entry: one-to-many. An IOPMP entry belongs to at most one memory domain, while a memory domain can have zero or more IOPMP entries. In the baseline format, the <<#MDCFG_TABLE,MDCFG table>> configures this association.
+* Memory domain to IOPMP entry: one-to-many. With a proper MDCFG setting (<<#MDCFG_TABLE, MDCFG Table>>), an IOPMP entry belongs to at most one memory domain, while a memory domain can have zero or more IOPMP entries. In the baseline format, the <<#MDCFG_TABLE,MDCFG table>> configures this association.
 * RRID to IOPMP entry: derived from the two above. An RRID associated with a memory domain is thereby associated with all the IOPMP entries of that memory domain, which are the rules the IOPMP applies to transactions carrying that RRID, as described in <<#TRANSACTION_CHECKING,Transaction Checking>>.
 
 <<EXAMPLE_RRID2ENTRY>> illustrates an example of relations between RRIDs, memory domains, and IOPMP entries. In the example, RRID 0 is associated with entry 0, 1, 2, 3, 4, and RRID 1 is associated with entry 0, 1, 2, 5, 6.
@@ -141,18 +141,13 @@ The MDCFG table maps each memory domain to its IOPMP entries. Every memory domai
 This specification does not require `MDCFG(_m_).t` to be bounded by `HWCFG1.entry_num`, so a memory domain can have a range of IOPMP entry indices that extends past the end of the IOPMP entry array. Indices beyond the array select no entry; see <<#IOPMP_ENTRY, IOPMP Entries>>. Requiring the bound would add a comparison against `HWCFG1.entry_num` on every write to `MDCFG(_m_)`, and would not improve security, because the indices beyond the array contribute no rule and therefore cannot grant access.
 ====
 
-Programmers should maintain proper settings in the MDCFG table when `HWCFG0.enable` is set, where `MDCFG(_m_ + 1).t` should be greater than or equal to `MDCFG(_m_).t` for any legal MD m. Otherwise, the MDCFG table has an improper setting, that is, there exist two legal MDs _m_ and _k_, `MDCFG(_k_).t` > `MDCFG(_m_).t` for _k_ < _m_. In this case, the specification denotes the MD _m_ as having an improper setting.
+The MDCFG table has a proper setting if `MDCFG(_m_-1).t` {le} `MDCFG(_m_).t` for every _m_ with 0 < _m_ < `HWCFG0.md_num`. Otherwise, the MDCFG table has an improper setting.
 
-When the MDCFG table has an improper setting, the resulting association of IOPMP entries to MDs is implementation-defined, but the following conditions must be held:
-
-* an entry must belong to at most one memory domain; and
-* the index of an entry in a lower-indexed memory domain must be lower than that in a higher-indexed memory domain.
-
-Examples of implementation-defined behaviors for handling improper MDCFG settings are provided in <<#IMPROPER_MDCFG_REFERENCE,Reference Behaviors of Improper Settings on MDCFG Table>>.
+The rule above applies to every setting of the table. An MD whose lower bound is not below its upper bound, that is, `MDCFG(_m_-1).t` {ge} `MDCFG(_m_).t` for _m_ > 0, owns no IOPMP entry, and an IOPMP entry whose index lies in the ranges of several MDs belongs to all of them. With a proper setting, the ranges never overlap, so an IOPMP entry belongs to at most one MD.
 
 [NOTE]
 ====
-For portability, programmers should ensure the MDCFG table has a proper setting during the runtime. In the case that the process of programming or initializing the MDCFG table causes an improper setting to occur transiently, software can deassociate affected MDs in the SRCMD table before programming the MDCFG table to avoid security issues. Even though the procedure may introduce extra steps, the table is not subject to change at such a high frequency as to hurt overall performance. Thus, the specification requires programmers to maintain proper settings instead of requiring specific hardware behaviors on improper settings.
+This rule requires no additional hardware: the range comparison alone determines the association, and no other state is needed. An improper setting can associate an RRID with IOPMP entries that software intended for another MD. Software should therefore keep the table proper; <<#MDCFG_PROGRAMMING_GUIDE, Updating the MDCFG Table>> describes how to change it without introducing an improper setting, even transiently.
 ====
 
 [#MDCFG_PROGRAMMING_GUIDE]
@@ -218,7 +213,7 @@ void update_mdcfg_properly(const uint16_t *mdcfg_t_current,
 
 Because `MDCFG(_m_).t` is WARL, software should write only values that the implementation accepts unchanged; it can determine them by reading the table back, for example, during bring-up. If software verifies an update by reading the table back, it should do so before it resumes the affected transactions or allows other writes to the MDCFG table.
 
-NOTE: The write order only keeps the table proper. An IOPMP entry that moves between memory domains keeps its contents, so a transaction checked against an intermediate table can be granted or denied by a rule written for another memory domain. Software should therefore update the table with the transferred entries set to OFF or already programmed for their new memory domain, and keep transactions from being checked against the affected memory domains during the update, for example, by stalling them as described in <<Program_IOPMPs, Safe Runtime Configuration>>.
+NOTE: The write order only keeps the table proper. An IOPMP entry that moves between memory domains keeps its contents, and an improper intermediate setting can make it belong to two memory domains at once, so a transaction checked against an intermediate table can be granted or denied by a rule written for another memory domain. Software should therefore update the table with the transferred entries set to OFF or already programmed for their new memory domain, and keep transactions from being checked against the affected memory domains during the update, for example, by stalling them as described in <<Program_IOPMPs, Safe Runtime Configuration>>.
 
 [#TRANSACTION_CHECKING]
 === Transaction Checking
