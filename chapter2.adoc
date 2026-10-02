@@ -91,14 +91,14 @@ A Memory Domain (MD) is an abstract construct representing a transaction destina
 
 For example, a Network Interface Controller (NIC) typically utilizes multiple memory areas, such as a Receive (RX) data buffer, a Transmit (TX) data buffer, and a set of control registers. These distinct regions, due to their association with the single NIC device and similar access requirements, can be efficiently consolidated into a single memory domain. If a processor (or other bus agent) is given full control over the NIC's operation, that agent may then be explicitly associated with this MD.
 
-Memory domains are a way of dividing the IOPMP entry array into different subarrays. Each subarray is a memory domain. An IOPMP instance can support up to 63 memory domains; the actual number is implementation-defined and is indicated in `HWCFG0.md_num`. Memory domains are indexed starting from zero.
+Memory domains are a way of dividing the IOPMP entry array into different subarrays. Each subarray is a memory domain. With a proper MDCFG setting, the subarrays do not overlap. An IOPMP instance can support up to 63 memory domains; the actual number is implementation-defined and is indicated in `HWCFG0.md_num`. Memory domains are indexed starting from zero.
 
 [#RRID_MD_ENTRY_RELATIONS]
 === Relations among RRIDs, Memory Domains, and IOPMP Entries
 An RRID reaches IOPMP entries through memory domains. The relations among the three are as follows:
 
 * RRID to memory domain: many-to-many. An RRID can be associated with multiple memory domains, and a memory domain can be associated with multiple RRIDs. In the baseline format, the <<#SRCMD_TABLE,SRCMD table>> configures this association.
-* Memory domain to IOPMP entry: one-to-many. With a proper MDCFG setting (<<#MDCFG_TABLE, MDCFG Table>>), an IOPMP entry belongs to at most one memory domain, while a memory domain can have zero or more IOPMP entries. In the baseline format, the <<#MDCFG_TABLE,MDCFG table>> configures this association.
+* Memory domain to IOPMP entry: one-to-many with a proper MDCFG setting. With a proper MDCFG setting (<<#MDCFG_TABLE, MDCFG Table>>), an IOPMP entry belongs to at most one memory domain, while a memory domain can have zero or more IOPMP entries. In the baseline format, the <<#MDCFG_TABLE,MDCFG table>> configures this association.
 * RRID to IOPMP entry: derived from the two above. An RRID associated with a memory domain is thereby associated with all the IOPMP entries of that memory domain, which are the rules the IOPMP applies to transactions carrying that RRID, as described in <<#TRANSACTION_CHECKING,Transaction Checking>>.
 
 <<EXAMPLE_RRID2ENTRY>> illustrates an example of relations between RRIDs, memory domains, and IOPMP entries. In the example, RRID 0 is associated with entry 0, 1, 2, 3, 4, and RRID 1 is associated with entry 0, 1, 2, 5, 6.
@@ -147,7 +147,7 @@ The rule above applies to every setting of the table. An MD whose lower bound is
 
 [NOTE]
 ====
-This rule requires no additional hardware: the range comparison alone determines the association, and no other state is needed. An improper setting can associate an RRID with IOPMP entries that software intended for another MD. Software should therefore keep the table proper; <<#MDCFG_PROGRAMMING_GUIDE, Updating the MDCFG Table>> describes how to change it without introducing an improper setting, even transiently.
+This rule requires no additional hardware: the range comparison alone determines the association, and no other state is needed. An improper setting can associate an RRID with IOPMP entries that software intended for another MD, including IOPMP entries of an MD whose `MDCFG` registers are locked; see <<#MDCFG_PROTECTION, MDCFG Table Protection>>. Software should therefore keep the table proper; <<#MDCFG_PROGRAMMING_GUIDE, Updating the MDCFG Table>> describes how to change it without introducing an improper setting, even transiently.
 ====
 
 [#MDCFG_PROGRAMMING_GUIDE]
@@ -215,7 +215,7 @@ void update_mdcfg_properly(const uint16_t *mdcfg_t_current,
 
 Because `MDCFG(_m_).t` is WARL, software should write only values that the implementation accepts unchanged; it can determine them by reading the table back, for example, during bring-up. If software verifies an update by reading the table back, it should do so before it resumes the affected transactions or allows other writes to the MDCFG table.
 
-NOTE: The write order only keeps the table proper. An IOPMP entry that moves between memory domains keeps its contents, and an improper intermediate setting can make it belong to two memory domains at once, so a transaction checked against an intermediate table can be granted or denied by a rule written for another memory domain. Software should therefore update the table with the transferred entries set to OFF or already programmed for their new memory domain, and keep transactions from being checked against the affected memory domains during the update, for example, by stalling them as described in <<Program_IOPMPs, Safe Runtime Configuration>>.
+NOTE: The write order only keeps the table proper. An IOPMP entry that moves between memory domains keeps its contents, and an improper intermediate setting can make it belong to two memory domains at once, so a transaction checked against an intermediate table can be granted or denied by a rule written for another memory domain. Software should therefore update the table with the transferred entries set to OFF or already programmed for their new memory domain, and keep transactions from being checked against the affected memory domains during the update, for example, by stalling them as described in <<Program_IOPMPs, Safe Runtime Configuration>>. If software reprograms the address of a transferred IOPMP entry _i_ and IOPMP entry _i_+1 selects TOR, the region of IOPMP entry _i_+1 changes as well, so the affected memory domains also include the memory domains of IOPMP entry _i_+1.
 
 [#TRANSACTION_CHECKING]
 === Transaction Checking

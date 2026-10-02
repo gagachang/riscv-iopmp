@@ -264,7 +264,7 @@ The MDCFG table is a lookup to specify the number of IOPMP entries that is assoc
 - if `MDCFG(_m_-1).t` {le} _j_ < `MDCFG(_m_).t`, where _m_ > 0; or
 - if _j_ < `MDCFG(0).t`, where _m_ = 0.
 
-If `MDCFG(_m_-1).t` {ge} `MDCFG(_m_).t`, no IOPMP entry belongs to MD _m_. Please refer to <<#MDCFG_TABLE, MDCFG Table>> for improper settings.
+If `MDCFG(_m_-1).t` {ge} `MDCFG(_m_).t`, where _m_ > 0, no IOPMP entry belongs to MD _m_. Please refer to <<#MDCFG_TABLE, MDCFG Table>> for improper settings.
 
 |`rsv`  |31:16      |ZERO   |0          |Must be zero on write, reserved for future.
 |===

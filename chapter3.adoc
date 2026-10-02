@@ -35,6 +35,8 @@ Register `MDCFGLCK` is designed to partially or fully lock the MDCFG table. `MDC
 [NOTE]
 ====
 If `MDCFG(_m_)` is locked for MD _m_, while `MDCFG(_m_-1)` is not locked, it could lead to the potential addition or removal of unexpected IOPMP entries within the MD _m_. This can occur by manipulating `MDCFG(_m_-1).t`. Thus, the specification requires that if `MDCFG(_m_)` is locked for MD _m_, all its preceding MDCFG table entries (`MDCFG(0)` to `MDCFG(_m_-1)`) must also be locked.
+
+Locking `MDCFG(0)` to `MDCFG(_m_)` fixes the IOPMP entries of MD 0 to MD _m_, but it does not keep those IOPMP entries exclusive to them. Software that can still write an unlocked `MDCFG(_k_)`, _k_ > _m_, can create an improper setting in which a higher-indexed MD also covers them (<<#MDCFG_TABLE, MDCFG Table>>), so an RRID associated only with that MD reaches them, and with the SPS extension, a permissive SPS setting of that MD can bypass a locked SPS restriction of MD _m_. To keep the IOPMP entries exclusive, software can lock the complete MDCFG table with a proper setting, that is, set `MDCFGLCK.f` {ge} `HWCFG0.md_num`, or rely on locked, higher-priority IOPMP entries that deny the unwanted RRIDs, as described in <<#SRCMD_PROTECTION, SRCMD Table Protection>>.
 ====
 
 [#ENTRY_PROTECTION]

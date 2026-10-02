@@ -45,3 +45,4 @@ image::{imgpath}/srcmd_format2_example.png[]
 In MD-indexed Format, an IOPMP checks both the permission of `SRCMD_PERM(H)(_m_)` and the `ENTRY_CFG.r/w/x` permission.
 The instruction fetch permission of `SRCMD_PERM(H)(_m_)` is considered the same as its corresponding read permission.
 A transaction is legal if either of them allows the transaction.
+This check is performed per memory domain: a transaction is permitted through memory domain _m_ if `SRCMD_PERM(H)(_m_)` or the matching IOPMP entry permits the access type. If an IOPMP entry belongs to several memory domains, which can happen only with an improper MDCFG setting (<<#MDCFG_TABLE, MDCFG Table>>), the transaction is legal if it is permitted through any of them. For an AMO, the same memory domain must permit both read and write access.
