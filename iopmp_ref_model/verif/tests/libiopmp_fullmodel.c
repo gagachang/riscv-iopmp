@@ -2890,6 +2890,14 @@ int main(void)
     FAIL_IF(iopmp_get_and_clear_msi_werr(&iopmp, NULL) != IOPMP_ERR_INVALID_PARAMETER);
     END_TEST();
 
+    START_TEST("Query the pending interrupt");
+    val_bool = true;
+    ret = iopmp_check_pending_interrupt(&iopmp, &val_bool);
+    FAIL_IF(ret != IOPMP_OK);
+    FAIL_IF(val_bool != false);
+    FAIL_IF(iopmp_check_pending_interrupt(&iopmp, NULL) != IOPMP_ERR_INVALID_PARAMETER);
+    END_TEST();
+
     START_TEST("Capture an error when the record is empty");
     FAIL_IF(iopmp_capture_error(&iopmp, &err_report, false) != IOPMP_ERR_NOT_EXIST);
     FAIL_IF(iopmp_capture_error(&iopmp, NULL, false) != IOPMP_ERR_INVALID_PARAMETER);
@@ -2971,9 +2979,11 @@ int main(void)
     iopmp_validate_access(&iopmp_dev, &iopmp_trans_req, &iopmp_trans_rsp, &intrpt);
     FAIL_IF(iopmp_trans_rsp.status != IOPMP_ERROR);
     FAIL_IF(intrpt != 1);
-    FAIL_IF((read_register(&iopmp_dev, ERR_INFO_OFFSET, 4) & 0x1) != 1);
+    FAIL_IF(iopmp_check_pending_interrupt(&iopmp, &val_bool) != IOPMP_OK);
+    FAIL_IF(val_bool != true);
     FAIL_IF(iopmp_invalidate_error(&iopmp) != IOPMP_OK);
-    FAIL_IF((read_register(&iopmp_dev, ERR_INFO_OFFSET, 4) & 0x1) != 0);
+    FAIL_IF(iopmp_check_pending_interrupt(&iopmp, &val_bool) != IOPMP_OK);
+    FAIL_IF(val_bool != false);
     cfg.no_err_rec = false;
     cfg.mfr_en = true;
     cfg.imp_err_reqid_eid = true;

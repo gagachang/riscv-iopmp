@@ -442,6 +442,14 @@ enum iopmp_error generic_get_sv_window(IOPMP_t *iopmp, uint16_t *svi,
                                        uint16_t *svw);
 
 /**
+ * \brief Check if an interrupt is pending, that is, if ERR_INFO.v bit is set
+ *
+ * \param[in] iopmp             The IOPMP instance to be checked
+ * \param[out] pending          The pointer to store ERR_INFO.v
+ */
+void generic_check_pending_interrupt(IOPMP_t *iopmp, bool *pending);
+
+/**
  * \brief Acknowledge the error by clearing ERR_INFO.v bit
  *
  * \param[in] iopmp             The IOPMP instance to be invalidated

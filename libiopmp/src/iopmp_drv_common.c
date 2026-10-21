@@ -855,6 +855,14 @@ enum iopmp_error generic_set_stall_violation_en(IOPMP_t *iopmp, bool *enable)
     return enable_req == *enable ? IOPMP_OK : IOPMP_ERR_ILLEGAL_VALUE;
 }
 
+void generic_check_pending_interrupt(IOPMP_t *iopmp, bool *pending)
+{
+    uint32_t err_info;
+
+    err_info = io_read32(iopmp->addr + IOPMP_ERR_INFO_BASE);
+    *pending = (EXTRACT_FIELD(err_info, IOPMP_ERR_INFO_V) == 1U);
+}
+
 void generic_invalidate_error(IOPMP_t *iopmp)
 {
     /* ERR_INFO.v is W1C */
