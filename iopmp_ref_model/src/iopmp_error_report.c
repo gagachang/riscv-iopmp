@@ -6,15 +6,15 @@
 // Author: Yazan Hussnain (yazan.hussain@10xengineers.ai)
 //         Gull Ahmed (gull.ahmed@10xengineers.ai)
 // Date: October 24, 2024
-// Description: IOPMP Error Capture Module
-// This file contains the implementation for error capturing in the
-// Input/Output Physical Memory Protection (IOPMP). The `errorCapture`
-// function is responsible for logging error information when a transaction
-// request encounters an access violation or permission-related issue. It
-// stores details such as transaction type, error type, request ID, entry ID,
-// and the address where the error occurred. Additionally, the function
-// detects and flags subsequent violations and can trigger an interrupt if
-// necessary.
+// Description: IOPMP Error Reporting Module
+// This file contains the implementation for error reporting in the
+// Input/Output Physical Memory Protection (IOPMP). The `errorReport`
+// function is responsible for flagging the error through ERR_INFO.v when a
+// transaction request encounters an access violation or permission-related
+// issue, and can trigger an interrupt if necessary. If the error capture
+// record is implemented, it also stores details such as transaction type,
+// error type, request ID, entry ID, and the address where the error occurred.
+// Additionally, the function detects and flags subsequent violations.
 ***************************************************************************/
 
 #include "iopmp.h"
@@ -30,7 +30,8 @@ static void setRridSv(iopmp_dev_t *iopmp, uint16_t rrid) {
 }
 
 /**
-  * @brief Captures and logs error information for a transaction request.
+  * @brief Reports the error of a transaction request, and captures and logs
+  *        its information if the error capture record is implemented.
   *
   * @param iopmp The IOPMP instance.
   * @param trans_type Type of the transaction request (read/write permissions).
@@ -43,29 +44,29 @@ static void setRridSv(iopmp_dev_t *iopmp, uint16_t rrid) {
   * @param intrpt Pointer to the variable to store wired interrupt flag.
   *               This flag is set to 1 if the following conditions are true:
   *                 - the transaction fails
-  *                 - a primary error capture occurs
+  *                 - there is no pending error, that is, ERR_INFO.v = 0
   *                 - the interrupts are not suppressed
   *                 - IOPMP doesn't implement MSI extension, or MSI is not enabled
   *               This flag is set to 0 if the following conditions are true:
   *                 - this transaction fails
-  *                 - a primary error capture occurs
+  *                 - there is no pending error, that is, ERR_INFO.v = 0
   *                 - the interrupts are suppressed, or IOPMP implements MSI extension
   *                   and triggers MSI instead of wired interrupt
  **/
-void errorCapture(iopmp_dev_t *iopmp, perm_type_e trans_type, uint8_t error_type,
-                  uint16_t rrid, uint16_t entry_id, uint64_t err_addr,
-                  bool gen_intrpt, bool gen_buserr, uint8_t *intrpt) {
+void errorReport(iopmp_dev_t *iopmp, perm_type_e trans_type, uint8_t error_type,
+                 uint16_t rrid, uint16_t entry_id, uint64_t err_addr,
+                 bool gen_intrpt, bool gen_buserr, uint8_t *intrpt) {
 
     // Current value of ERR_INFO.v
     int err_reqinfo_v = iopmp->reg_file.err_info.v;
 
-    // First error capture occurs when the following conditions are true:
+    // ERR_INFO.v is set when the following conditions are true:
     //   - An interrupt is triggered, or a bus error is returned
-    //   - There is no pending error capture, that is, current ERR_INFO.v = '0'
+    //   - There is no pending error, that is, current ERR_INFO.v = '0'
     bool first_record = (gen_intrpt || gen_buserr) && !err_reqinfo_v;
 
     if (first_record) {
-        iopmp->reg_file.err_info.v = 1;               // Mark error as captured
+        iopmp->reg_file.err_info.v = 1;               // Flag the error and the pending interrupt
 
         // ERR_INFO.v is also the interrupt pending bit, so it is set even if
         // IOPMP doesn't implement the error capture record. Only the details
