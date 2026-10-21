@@ -1011,13 +1011,9 @@ enum iopmp_error iopmp_invalidate_error(IOPMP_t *iopmp)
     iopmp_assert(iopmp_is_initialized(iopmp));
 
     /*
-     * The error capture record is optional.
-     * If it is not implemented, ERR_INFO.v should be wired to zero.
+     * ERR_INFO.v is also the interrupt pending bit, so it is implemented and
+     * must be cleared even if the error capture record is not implemented.
      */
-    if (iopmp->no_err_rec == 1U) {
-        return IOPMP_ERR_NOT_SUPPORTED;
-    }
-
     if ((iopmp->ops_override != NULL) &&
         (iopmp->ops_override->invalidate_error != NULL)) {
         iopmp->ops_override->invalidate_error(iopmp);

@@ -857,7 +857,7 @@ enum iopmp_error generic_set_stall_violation_en(IOPMP_t *iopmp, bool *enable)
 
 void generic_invalidate_error(IOPMP_t *iopmp)
 {
-    /* Only ERR_INFO.ip is writable. Write 1 clear */
+    /* ERR_INFO.v is W1C */
     io_write32(iopmp->addr + IOPMP_ERR_INFO_BASE, IOPMP_ERR_INFO_V_MASK);
 }
 
