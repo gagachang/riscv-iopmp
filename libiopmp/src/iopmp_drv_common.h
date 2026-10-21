@@ -442,7 +442,7 @@ enum iopmp_error generic_get_sv_window(IOPMP_t *iopmp, uint16_t *svi,
                                        uint16_t *svw);
 
 /**
- * \brief Invalidate the error record by clearing ERR_INFO.v bit
+ * \brief Acknowledge the error by clearing ERR_INFO.v bit
  *
  * \param[in] iopmp             The IOPMP instance to be invalidated
  */
