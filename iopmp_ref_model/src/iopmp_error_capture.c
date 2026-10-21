@@ -66,21 +66,27 @@ void errorCapture(iopmp_dev_t *iopmp, perm_type_e trans_type, uint8_t error_type
 
     if (first_record) {
         iopmp->reg_file.err_info.v = 1;               // Mark error as captured
-        // Set error status and transaction details
-        iopmp->reg_file.err_info.ttype = trans_type;  // Transaction type (read/write)
-        iopmp->reg_file.err_info.etype = error_type;  // Specific error type
 
-        // Capture lower and upper parts of error address
-        iopmp->reg_file.err_reqaddr.addr   = (uint32_t)((err_addr >> 2) & UINT32_MAX);         // Error address [33:2]
-        iopmp->reg_file.err_reqaddrh.addrh = (uint32_t)((err_addr >> 34) & UINT32_MAX);        // Error address [65:34]
+        // ERR_INFO.v is also the interrupt pending bit, so it is set even if
+        // IOPMP doesn't implement the error capture record. Only the details
+        // of the transaction are left unrecorded in that case.
+        if (!iopmp->reg_file.hwcfg0.no_err_rec) {
+            // Set error status and transaction details
+            iopmp->reg_file.err_info.ttype = trans_type;  // Transaction type (read/write)
+            iopmp->reg_file.err_info.etype = error_type;  // Specific error type
 
-        // Record Request ID and Entry ID details
-        iopmp->reg_file.err_reqid.rrid = rrid;
-        if (iopmp->imp_err_reqid_eid) {
-            // One can implement the error capture record, but doesn't implement
-            // the error entry index record (ERR_REQID.eid).
-            // If IOPMP doesn't implement ERR_REQID.eid it won't be updated.
-            iopmp->reg_file.err_reqid.eid = entry_id;
+            // Capture lower and upper parts of error address
+            iopmp->reg_file.err_reqaddr.addr   = (uint32_t)((err_addr >> 2) & UINT32_MAX);         // Error address [33:2]
+            iopmp->reg_file.err_reqaddrh.addrh = (uint32_t)((err_addr >> 34) & UINT32_MAX);        // Error address [65:34]
+
+            // Record Request ID and Entry ID details
+            iopmp->reg_file.err_reqid.rrid = rrid;
+            if (iopmp->imp_err_reqid_eid) {
+                // One can implement the error capture record, but doesn't implement
+                // the error entry index record (ERR_REQID.eid).
+                // If IOPMP doesn't implement ERR_REQID.eid it won't be updated.
+                iopmp->reg_file.err_reqid.eid = entry_id;
+            }
         }
 
         generate_interrupt(iopmp, gen_intrpt, intrpt);

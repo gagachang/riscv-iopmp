@@ -726,11 +726,14 @@ void write_register(iopmp_dev_t *iopmp, uint64_t offset, reg_intf_dw data, uint8
         break;
 
     case ERR_INFO_OFFSET:
-        if (!iopmp->reg_file.hwcfg0.no_err_rec) {
-            iopmp->reg_file.err_info.v        &= ~err_info_temp.v;
+        // ERR_INFO.v is implemented even if the error capture record is not
+        iopmp->reg_file.err_info.v            &= ~err_info_temp.v;
+        // ERR_INFO.msi_werr is implemented if IOPMP implements MSI extension,
+        // regardless of the error capture record
+        if (iopmp->reg_file.hwcfg2.msi_en) {
             iopmp->reg_file.err_info.msi_werr &= ~err_info_temp.msi_werr;
-            iopmp->reg_file.err_info.rsv       = 0;
         }
+        iopmp->reg_file.err_info.rsv           = 0;
         break;
 
     case ERR_REQADDR_OFFSET:

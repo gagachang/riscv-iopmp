@@ -349,11 +349,9 @@ pass_checks:
 stop_and_report_fault:
     iopmp_trans_rsp->violation = 1;
 
-    // If IOPMP implements error capture feature, IOPMP triggers error capture
-    // to log the error information into the registers.
-    if (!iopmp->reg_file.hwcfg0.no_err_rec) {
-        errorCapture(iopmp, trans_perm, error_type, rrid, error_eid, trans_req->addr, gen_intrpt, gen_buserr, intrpt);
-    }
+    // IOPMP sets ERR_INFO.v and triggers the interrupt, and logs the error
+    // information into the registers if it implements the error capture record.
+    errorCapture(iopmp, trans_perm, error_type, rrid, error_eid, trans_req->addr, gen_intrpt, gen_buserr, intrpt);
     // Return response with default status if no match/error occurs
     // In case of error suppression, success response is returned, with user defined value on initiator port
     // NOTE: You can change the `user` value
