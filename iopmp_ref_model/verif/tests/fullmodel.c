@@ -1075,6 +1075,20 @@ int main()
     cfg = cfg_saved;
     END_TEST();
 
+    START_TEST("ERR_REQID reads zero without the error capture record");
+    cfg_saved = cfg;
+    cfg.imp_err_reqid_eid = false;
+    FAIL_IF((reset_iopmp(&iopmp, &cfg) != 0));
+    FAIL_IF((read_register(&iopmp, ERR_REQID_OFFSET, 4) != 0xFFFF0000));
+    // Without the error capture record, ERR_REQID is not implemented at all
+    cfg.no_err_rec = true;
+    cfg.mfr_en = false;
+    FAIL_IF((reset_iopmp(&iopmp, &cfg) != 0));
+    FAIL_IF((read_register(&iopmp, ERR_REQID_OFFSET, 4) != 0));
+    // Reset configuration
+    cfg = cfg_saved;
+    END_TEST();
+
     START_TEST("RRIDSCP read/write behaviors");
     cfg_saved = cfg;
     cfg.stall_en = true;
