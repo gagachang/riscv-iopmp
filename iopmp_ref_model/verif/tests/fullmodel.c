@@ -1089,6 +1089,25 @@ int main()
     cfg = cfg_saved;
     END_TEST();
 
+    START_TEST("ERR_REQADDRH reads zero when addrh_en is 0");
+    cfg_saved = cfg;
+    cfg.addrh_en = false;
+    FAIL_IF((reset_iopmp(&iopmp, &cfg) != 0));
+    set_hwcfg0_enable(&iopmp);
+    // RRID(2) has no MD, so the transaction hits no rule. Its address needs
+    // more than the 34 bits ERR_REQADDR holds.
+    receiver_port(2, (1ULL << 34) | 360, 0, 3, READ_ACCESS, 0, &iopmp_trans_req);
+    // Requestor Port Signals
+    iopmp_validate_access(&iopmp, &iopmp_trans_req, &iopmp_trans_rsp, &intrpt);
+    FAIL_IF((iopmp_trans_rsp.status != IOPMP_ERROR));
+    err_info_temp.raw = read_register(&iopmp, ERR_INFO_OFFSET, 4);
+    FAIL_IF((err_info_temp.v != 1));
+    FAIL_IF((read_register(&iopmp, ERR_REQADDR_OFFSET, 4) != (360 >> 2)));
+    FAIL_IF((read_register(&iopmp, ERR_REQADDRH_OFFSET, 4) != 0));
+    // Reset configuration
+    cfg = cfg_saved;
+    END_TEST();
+
     START_TEST("RRIDSCP read/write behaviors");
     cfg_saved = cfg;
     cfg.stall_en = true;

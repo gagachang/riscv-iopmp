@@ -76,9 +76,12 @@ void errorReport(iopmp_dev_t *iopmp, perm_type_e trans_type, uint8_t error_type,
             iopmp->reg_file.err_info.ttype = trans_type;  // Transaction type (read/write)
             iopmp->reg_file.err_info.etype = error_type;  // Specific error type
 
-            // Capture lower and upper parts of error address
+            // Capture lower and upper parts of error address. ERR_REQADDRH is
+            // implemented only if HWCFG0.addrh_en is set.
             iopmp->reg_file.err_reqaddr.addr   = (uint32_t)((err_addr >> 2) & UINT32_MAX);         // Error address [33:2]
-            iopmp->reg_file.err_reqaddrh.addrh = (uint32_t)((err_addr >> 34) & UINT32_MAX);        // Error address [65:34]
+            if (iopmp->reg_file.hwcfg0.addrh_en) {
+                iopmp->reg_file.err_reqaddrh.addrh = (uint32_t)((err_addr >> 34) & UINT32_MAX);    // Error address [65:34]
+            }
 
             // Record Request ID and Entry ID details
             iopmp->reg_file.err_reqid.rrid = rrid;
