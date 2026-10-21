@@ -166,8 +166,9 @@ int reset_iopmp(iopmp_dev_t *iopmp, iopmp_cfg_t *cfg)
 
     // One can implement the error capture record, but doesn't implement the
     // error entry index record (ERR_REQID.eid). In this case, eid should be
-    // wired to 0xffff.
-    if (!cfg->imp_err_reqid_eid) {
+    // hardwired to 0xffff. If the error capture record is not implemented,
+    // ERR_REQID is not implemented as a whole and reads zero.
+    if (!cfg->no_err_rec && !cfg->imp_err_reqid_eid) {
         iopmp->reg_file.err_reqid.eid       = 0xFFFF;
     }
 
