@@ -9,7 +9,7 @@ This section summarizes the additional registers and fields required when implem
 :xrefstyle: full
 
 .Register and field summary
-[%autowidth, options="header"]
+[%autowidth, float="center", align="center", options="header"]
 |===
    |Offset    |Register |Field              |Bits     |Related section(s)
 .9+|0x0014 .9+|`hwcfg3` |`MDCFG_FMT`        |1:0      |<<mdcfg-table-formats>>
@@ -32,7 +32,7 @@ This section summarizes the additional registers and fields required when implem
 
 [#REG_EXT_HWCFG3]
 ==== Hardware Configuration 3 (`hwcfg3`) Register
-[cols="<2,<1,<1,<1,<6",options="header"]
+[float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field             |Bits  |R/W   |Default   |Description
 |`MDCFG_FMT`       |1:0   |R     |IMP      a|Indicate the MDCFG format:
@@ -73,7 +73,7 @@ All fields related to instruction fetch can be fixed to 0, or not implemented.
 
 `srcmd_perm(_m_)` is read and write permissions of RRID 0 ~ 15 for MD _m_.
 
-[cols="<2,<1,<1,<1,<6",options="header"]
+[float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits |R/W  |Default |Description
 |`PERM` |31:0 |WARL |DC      |Holds two bits per RRID that give the RRID's read and write permissions for memory domain _m_. Bit 2*_s_ holds the read permission for RRID _s_, and bit 2*_s_+1 holds the write permission for RRID _s_, where _s_{le}15.
@@ -82,7 +82,7 @@ The instruction fetch permission is considered the same as the read permission.
 
 `srcmd_permh(_m_)` is read and write permissions of RRID 16 ~ 31 for MD _m_.
 
-[cols="<2,<1,<1,<1,<6",options="header"]
+[float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits |R/W  |Default |Description
 |`PERMH` |31:0 |WARL |DC      |Holds two bits per RRID that give the RRID's read and write permissions for memory domain _m_. Bit 2*(_s_-16) holds the read permission for RRID _s_, and bit 2*(_s_-16)+1 holds the write permission for RRID _s_, where _s_{ge}16. The register is implemented when `hwcfg1.RRID_NUM` > 16.
