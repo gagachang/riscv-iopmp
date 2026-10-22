@@ -7,14 +7,14 @@ The IOPMP specification supports multiple implementation models that combine dif
 
 ==== Full Model
 
-*Configuration*: *srcmd_fmt*=0, *mdcfg_fmt*=0
+*Configuration*: `hwcfg3.SRCMD_FMT`=0, `hwcfg3.MDCFG_FMT`=0
 
 The Full Model is the default IOPMP configuration with complete SRCMD and MDCFG table implementations, providing maximum flexibility and supporting all IOPMP extensions. This serves as the baseline for comparison with other optimized models.
 
 [#rapid-k-model]
 ==== Rapid-_k_ Model
 
-*Configuration*: *srcmd_fmt*=0, *mdcfg_fmt*=1, where _k_ = (*md_entry_num* + 1)
+*Configuration*: `hwcfg3.SRCMD_FMT`=0, `hwcfg3.MDCFG_FMT`=1, where _k_ = (`hwcfg3.MD_ENTRY_NUM` + 1)
 
 The Rapid-k Model simplifies MDCFG table lookup by implementing a fixed allocation scheme where each memory domain is assigned exactly _k_ IOPMP entry indices. This eliminates the need for MDCFG table lookups, reducing access latency and hardware complexity while maintaining full SRCMD table flexibility.
 
@@ -33,7 +33,7 @@ image::{imgpath}/iopmp_unit_block_diagram_rapid_4.png[]
 
 ==== Dynamic-_k_ Model
 
-*Configuration*: *srcmd_fmt*=0, *mdcfg_fmt*=2, where _k_ = (*md_entry_num* + 1)
+*Configuration*: `hwcfg3.SRCMD_FMT`=0, `hwcfg3.MDCFG_FMT`=2, where _k_ = (`hwcfg3.MD_ENTRY_NUM` + 1)
 
 The Dynamic-k Model provides runtime-programmable entry allocation similar to the Full Model but with a different MDCFG table format. This format enables efficient dynamic reconfiguration of memory domain boundaries while maintaining full SRCMD table capabilities.
 
@@ -49,7 +49,7 @@ The Dynamic-k Model provides runtime-programmable entry allocation similar to th
 
 ==== Isolation Model
 
-*Configuration*: *srcmd_fmt*=1, *mdcfg_fmt*=0
+*Configuration*: `hwcfg3.SRCMD_FMT`=1, `hwcfg3.MDCFG_FMT`=0
 
 The Isolation Model implements direct RRID-to-MD mapping where RRID _i_ exclusively associates with memory domain _i_. This provides strong isolation between requesters while maintaining flexible entry allocation through the full MDCFG table. The model eliminates SRCMD table hardware entirely, achieving significant area savings.
 
@@ -67,7 +67,7 @@ The Isolation Model implements direct RRID-to-MD mapping where RRID _i_ exclusiv
 [#compact-k-model]
 ==== Compact-_k_ Model
 
-*Configuration*: *srcmd_fmt*=1, *mdcfg_fmt*=1, where _k_ = (*md_entry_num* + 1)
+*Configuration*: `hwcfg3.SRCMD_FMT`=1, `hwcfg3.MDCFG_FMT`=1, where _k_ = (`hwcfg3.MD_ENTRY_NUM` + 1)
 
 The Compact-k Model maximizes area efficiency by combining both SRCMD and MDCFG simplifications. It implements direct RRID-to-MD mapping with fixed _k_ IOPMP entry indices per memory domain, eliminating both table lookup mechanisms. This represents the most area-optimized IOPMP configuration.
 

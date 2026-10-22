@@ -42,10 +42,10 @@ For Step 1, it's possible to postpone all transactions until all updates are fin
 
 In Step 2, the decision of whether a transaction should be stalled cannot reference the current settings because these settings are under updating. Therefore, the only reliable information for this decision is the RRID carried by the transaction. To simplify the following descriptions, we use _rrid_stall_ to represent an abstract bit array, where _rrid_stall_[_s_] = 1 indicates that transactions with RRID _s_ must be stalled. The IOPMP stalls a transaction based on its corresponding _rrid_stall_. Please note that it may not be an actual bit array in practice just for easier expression and is not directly accessible by software.
 
-Register `MDSTALL` and `MDSTALLH` (<<#REG_EXT_MDSTALL,MD-Based Stall Control>>) control _rrid_stall_. `MDSTALL.md` and `MDSTALLH.mdh` are used to select MDs. Denote _stall_by_md_ to represent the concatenation of `MDSTALL.mdh` and `MDSTALL.md`. That is, _stall_by_md_[30:0] is `MDSTALL.md[30:0]`, and _stall_by_md_[62:31] is `MDSTALLH.mdh[31:0]` if any. An MD _m_ is selected when _stall_by_md_[_m_] = 1. `MDSTALL.exempt` controls the polarity of the selection. An IOPMP updates _rrid_stall_ only when `MDSTALL.exempt` is written. When `MDSTALL.exempt` is written to 0, _rrid_stall_[_s_] is set if RRID _s_ is associated with a selected MD _m_ (_stall_by_md_[_m_] = 1). The SRCMD table defines the association of RRID _s_ and MD _m_. Conversely, when `MDSTALL.exempt` is written to 1, _rrid_stall_[_s_] must be set if RRID _s_ is not associated with any selected MD. This relation can be formulated as follows:
+Register `mdstall` and `mdstallh` (<<#REG_EXT_MDSTALL,MD-Based Stall Control>>) control _rrid_stall_. `mdstall.MD` and `mdstallh.MDH` are used to select MDs. Denote _stall_by_md_ to represent the concatenation of `mdstall.MDH` and `mdstall.MD`. That is, _stall_by_md_[30:0] is `mdstall.MD[30:0]`, and _stall_by_md_[62:31] is `mdstallh.MDH[31:0]` if any. An MD _m_ is selected when _stall_by_md_[_m_] = 1. `mdstall.EXEMPT` controls the polarity of the selection. An IOPMP updates _rrid_stall_ only when `mdstall.EXEMPT` is written. When `mdstall.EXEMPT` is written to 0, _rrid_stall_[_s_] is set if RRID _s_ is associated with a selected MD _m_ (_stall_by_md_[_m_] = 1). The SRCMD table defines the association of RRID _s_ and MD _m_. Conversely, when `mdstall.EXEMPT` is written to 1, _rrid_stall_[_s_] must be set if RRID _s_ is not associated with any selected MD. This relation can be formulated as follows:
 
 [.text-center]
-`_rrid_stall_[_s_] <= MDSTALL.exempt ^ ( Reduction_OR (SRCMD(_s_).md & _stall_by_md_));`
+`_rrid_stall_[_s_] <= mdstall.EXEMPT ^ ( Reduction_OR (srcmd(_s_).MD & _stall_by_md_));`
 
 Where:
 
@@ -54,29 +54,29 @@ Where:
 * `Reduction_OR()` is a function that applies bitwise logical OR across all input values.
 
 
-For any unimplemented MD, the corresponding bit in `MDSTALL.md` or `MDSTALLH.mdh` should be hardwired to 0.
+For any unimplemented MD, the corresponding bit in `mdstall.MD` or `mdstallh.MDH` should be hardwired to 0.
 
-_rrid_stall_ should be updated only when `MDSTALL.exempt` is written, that is, when `MDSTALL` is written. When `MDSTALLH` is written, the only action is to hold the value.
+_rrid_stall_ should be updated only when `mdstall.EXEMPT` is written, that is, when `mdstall` is written. When `mdstallh` is written, the only action is to hold the value.
 
-NOTE: Although _rrid_stall_ is derived from the SRCMD table, it should be updated only when `MDSTALL.exempt` is written. We cannot use the table when stalling transactions because the table updates may still be in progress when the IOPMP decides if a transaction should be stalled. Writing `MDSTALL` is just like capturing a snapshot of the table at the moment right before updating any settings. The _rrid_stall_ reflects the SRCMD table before any updates. 
+NOTE: Although _rrid_stall_ is derived from the SRCMD table, it should be updated only when `mdstall.EXEMPT` is written. We cannot use the table when stalling transactions because the table updates may still be in progress when the IOPMP decides if a transaction should be stalled. Writing `mdstall` is just like capturing a snapshot of the table at the moment right before updating any settings. The _rrid_stall_ reflects the SRCMD table before any updates. 
 
-NOTE: When writing `MDSTALL`, the specification only defines the transactions with RRID=_s_ must be stalled for all _rrid_stall_[_s_] = 1. It doesn't request the rest of the transactions to stall or not. It only asks that all transactions be resumed when writing `MDSTALL` with a zero.
+NOTE: When writing `mdstall`, the specification only defines the transactions with RRID=_s_ must be stalled for all _rrid_stall_[_s_] = 1. It doesn't request the rest of the transactions to stall or not. It only asks that all transactions be resumed when writing `mdstall` with a zero.
 
 ==== Cherry Pick
-Writing `RRIDSCP` register (<<#REG_EXT_RRIDSCP,RRID Cherry Pick Stall Control>>) is an optional substep after writing `MDSTALL` within Step 1 of <<#PROGRAMMING_STEPS, Programming Steps>>. Software can select or deselect the transactions with specific RRIDs to stall if the previous writing `MDSTALL`/`MDSTALLH` doesn't stall all the desired transactions. Software can write the register zero or multiple times in the substep.
+Writing `rridscp` register (<<#REG_EXT_RRIDSCP,RRID Cherry Pick Stall Control>>) is an optional substep after writing `mdstall` within Step 1 of <<#PROGRAMMING_STEPS, Programming Steps>>. Software can select or deselect the transactions with specific RRIDs to stall if the previous writing `mdstall`/`mdstallh` doesn't stall all the desired transactions. Software can write the register zero or multiple times in the substep.
 
 [NOTE]
 ====
-`MDSTALL`/`MDSTALLH` only stall the RRIDs based on the SRCMD table at the moment of writing `MDSTALL`. _rrid_stall_ is not updated when the SRCMD table is updated. Besides, _rrid_stall_ is set or clear only for those RRIDs associated with given MDs. The RRIDSCP is used to fine-tune the _rrid_stall_ if writing `MDSTALL`/`MDSTALLH` doesn't fulfill the desired _rrid_stall_ values.
-Software should, whenever possible, prioritize using the `MDSTALL`/`MDSTALLH` batch mechanism to manage the _rrid_stall_ state. While RRIDSCP offers granular control, it introduces significant software complexity. Its use is primarily intended for complex scenarios where the MD-based grouping logic of `MDSTALL` is insufficient to precisely define the set of RRIDs that must be stalled or exempted.
+`mdstall`/`mdstallh` only stall the RRIDs based on the SRCMD table at the moment of writing `mdstall`. _rrid_stall_ is not updated when the SRCMD table is updated. Besides, _rrid_stall_ is set or clear only for those RRIDs associated with given MDs. The `rridscp` register is used to fine-tune the _rrid_stall_ if writing `mdstall`/`mdstallh` doesn't fulfill the desired _rrid_stall_ values.
+Software should, whenever possible, prioritize using the `mdstall`/`mdstallh` batch mechanism to manage the _rrid_stall_ state. While the `rridscp` register offers granular control, it introduces significant software complexity. Its use is primarily intended for complex scenarios where the MD-based grouping logic of `mdstall` is insufficient to precisely define the set of RRIDs that must be stalled or exempted.
 ====
 
-The `RRIDSCP` register comprises two fields: a 2-bit `RRIDSCP.op` and a field for `RRIDSCP.rrid`. By setting `RRIDSCP.op` = 1, the _rrid_stall_[_s_] is set for _s_ = `RRIDSCP.rrid`. Conversely, by setting `RRIDSCP.op` = 2, the _rrid_stall_[_s_] is clear for _s_ = `RRIDSCP.rrid`. This register is used to fine-tune the result of writing `MDSTALL`/`MDSTALLH`. The writing `RRIDSCP.op` = 0 queries the value of _rrid_stall_[_s_] for a valid _s_. The value will be returned in the two most significant bits in the following reading `RRIDSCP`. `RRIDSCP.op`=3 is reserved.
+The `rridscp` register comprises two fields: a 2-bit `rridscp.OP` and a field for `rridscp.RRID`. By setting `rridscp.OP` = 1, the _rrid_stall_[_s_] is set for _s_ = `rridscp.RRID`. Conversely, by setting `rridscp.OP` = 2, the _rrid_stall_[_s_] is clear for _s_ = `rridscp.RRID`. This register is used to fine-tune the result of writing `mdstall`/`mdstallh`. The writing `rridscp.OP` = 0 queries the value of _rrid_stall_[_s_] for a valid _s_. The value will be returned in the two most significant bits in the following reading `rridscp`. `rridscp.OP`=3 is reserved.
 
 [#FAULTING_STALLED_TRANSACTIONS]
 ==== Faulting stalled transactions
-Faulting stalled transactions can be allowed. To allow faulting over stalling when an IOPMP cannot accommodate more stalled transactions, such as when the receiver port lacks a buffer for transaction storage, set bit `stall_violation_en` in register `ERR_CFG` (<<#REG_EXT_ERR_CFG,Error Configuration with All Extensions>>) to 1 before Step 1 of <<#PROGRAMMING_STEPS, Programming Steps>>. If any transaction is faulted due to the stalled transactions, the error information shall be logged in `ERR_INFO` (<<#REG_EXT_ERR_INFO,Error Information with All Extensions>>), where `ERR_INFO.etype` = 0x07 (error due to stalled transactions). The procedure for faulting checking transactions is identical to Steps 1-3 of <<#PROGRAMMING_STEPS, Programming Steps>>, except that, besides stalling and delaying the transactions, transactions can be faulted and cannot be resumed if the IOPMP can't handle more stalled transactions.
-If `stall_violation_en` is updated during Steps 1 to 3 of <<#PROGRAMMING_STEPS, Programming Steps>>, the behavior is undefined.
+Faulting stalled transactions can be allowed. To allow faulting over stalling when an IOPMP cannot accommodate more stalled transactions, such as when the receiver port lacks a buffer for transaction storage, set bit `STALL_VIOLATION_EN` in register `err_cfg` (<<#REG_EXT_ERR_CFG,Error Configuration with All Extensions>>) to 1 before Step 1 of <<#PROGRAMMING_STEPS, Programming Steps>>. If any transaction is faulted due to the stalled transactions, the error information shall be logged in `err_info` (<<#REG_EXT_ERR_INFO,Error Information with All Extensions>>), where `err_info.ETYPE` = 0x07 (error due to stalled transactions). The procedure for faulting checking transactions is identical to Steps 1-3 of <<#PROGRAMMING_STEPS, Programming Steps>>, except that, besides stalling and delaying the transactions, transactions can be faulted and cannot be resumed if the IOPMP can't handle more stalled transactions.
+If `STALL_VIOLATION_EN` is updated during Steps 1 to 3 of <<#PROGRAMMING_STEPS, Programming Steps>>, the behavior is undefined.
 
 [NOTE]
 ====
@@ -87,51 +87,51 @@ This function also can prevent the risk of deadlock in some systems. If an imple
 
 ==== Resume Stall
 
-In order to resume all stalled transactions, writing 0 to `MDSTALLH`, then writing 0 to `MDSTALL`.
+In order to resume all stalled transactions, writing 0 to `mdstallh`, then writing 0 to `mdstall`.
 This corresponds to Step 3 of <<#PROGRAMMING_STEPS, Programming Steps>>.
-After `MDSTALL` is written by zero, an IOPMP should clear `MDSTALL.is_busy` within some time, at which point all transactions have been resumed.
+After `mdstall` is written by zero, an IOPMP should clear `mdstall.IS_BUSY` within some time, at which point all transactions have been resumed.
 
 ==== The Order to Stall
-In Step 1 of <<#PROGRAMMING_STEPS, Programming Steps>>, `MDSTALL` can be written at most once and before a resume. Writing a non-zero value to `MDSTALL` multiple times after a resume leads to RRIDs' stall states being undefined.
+In Step 1 of <<#PROGRAMMING_STEPS, Programming Steps>>, `mdstall` can be written at most once and before a resume. Writing a non-zero value to `mdstall` multiple times after a resume leads to RRIDs' stall states being undefined.
 
-After `MDSTALL` and all `RRIDSCP` are written, the action to stall desired transactions may not take effect immediately in some implementations in which the subsequent setting updates (Step 2) could affect the transactions still under checking. To determine whether the action takes effect, software can read back and check the bit `MDSTALL.is_busy`, which is in the same location as `MDSTALL.exempt` on a write. `is_busy` = 0 indicates it has taken effect or no previous write; otherwise, it has not. A new writing `RRIDSCP` may temporarily switch `is_busy` to 1 and then switch to 0 at some time.
-`is_busy` can be hardwired to 0 if any `MDSTALL` and `RRIDSCP` writing won't cause a race condition of the transactions still under checking and the subsequent setting updates.
-Updating `stall_violation_en` should be before Step 1.
-If `stall_violation_en` is updated during Steps 1 to 3, the behavior is undefined.
+After `mdstall` and all `rridscp` are written, the action to stall desired transactions may not take effect immediately in some implementations in which the subsequent setting updates (Step 2) could affect the transactions still under checking. To determine whether the action takes effect, software can read back and check the bit `mdstall.IS_BUSY`, which is in the same location as `mdstall.EXEMPT` on a write. `IS_BUSY` = 0 indicates it has taken effect or no previous write; otherwise, it has not. A new writing `rridscp` may temporarily switch `IS_BUSY` to 1 and then switch to 0 at some time.
+`IS_BUSY` can be hardwired to 0 if any `mdstall` and `rridscp` writing won't cause a race condition of the transactions still under checking and the subsequent setting updates.
+Updating `STALL_VIOLATION_EN` should be before Step 1.
+If `STALL_VIOLATION_EN` is updated during Steps 1 to 3, the behavior is undefined.
 
 Based on <<#PROGRAMMING_STEPS, Programming Steps>>, complete steps to program an IOPMP should be followed.
 
-** Step 1.1: write `MDSTALLH`
-** Step 1.2: write `MDSTALL` once // exactly once
-** Step 1.3: write `RRIDSCP` zero or more times
-** Step 1.4: poll until `MDSTALL.is_busy` == 0 // to ensure all stalls takes effect if necessary for the implementation
+** Step 1.1: write `mdstallh`
+** Step 1.2: write `mdstall` once // exactly once
+** Step 1.3: write `rridscp` zero or more times
+** Step 1.4: poll until `mdstall.IS_BUSY` == 0 // to ensure all stalls takes effect if necessary for the implementation
 ** Step 2: update IOPMP's settings
-** Step 3.1: write 0 to `MDSTALLH`
-** Step 3.2: write 0 to `MDSTALL` // resume all transactions
-** Step 3.3: poll until `MDSTALL.is_busy` == 0  // optional, to ensure all resumes take effect. 
+** Step 3.1: write 0 to `mdstallh`
+** Step 3.2: write 0 to `mdstall` // resume all transactions
+** Step 3.3: poll until `mdstall.IS_BUSY` == 0  // optional, to ensure all resumes take effect. 
 
 Some steps may be skipped according to the actual implementation.
 
 ==== Implementation Options
 
-`HWCFG2.stall_en` indicates if the IOPMP implements the extension, which are `MDSTALL`, `MDSTALLH`, `RRIDSCP`, `ERR_CFG.stall_violation_en`, and additional error type = 0x07 "error due to a stalled transaction".
+`hwcfg2.STALL_EN` indicates if the IOPMP implements the extension, which are `mdstall`, `mdstallh`, `rridscp`, `err_cfg.STALL_VIOLATION_EN`, and additional error type = 0x07 "error due to a stalled transaction".
 
-All registers and fields described in xref:Program_IOPMPs[xrefstyle=full] (`MDSTALL`, `MDSTALLH`, `RRIDSCP`, and `ERR_CFG.stall_violation_en`) are optional. Moreover, these features could be partially implemented.
+All registers and fields described in xref:Program_IOPMPs[xrefstyle=full] (`mdstall`, `mdstallh`, `rridscp`, and `err_cfg.STALL_VIOLATION_EN`) are optional. Moreover, these features could be partially implemented.
 
-In `MDSTALL.md` and `MDSTALLH.mdh`, not every bit should be implemented even though the corresponding MD is implemented. An unimplemented bit means unselectable and should be hardwired to zero. To test which bits are implemented, software can write all 1's to `MDSTALL.md` and `MDSTALLH.mdh` and then read them back. An implemented bit returns 1.
+In `mdstall.MD` and `mdstallh.MDH`, not every bit should be implemented even though the corresponding MD is implemented. An unimplemented bit means unselectable and should be hardwired to zero. To test which bits are implemented, software can write all 1's to `mdstall.MD` and `mdstallh.MDH` and then read them back. An implemented bit returns 1.
 
-If an IOPMP implementation has fewer than 32 memory domains, `MDSTALLH` should be hardwired to zero.
+If an IOPMP implementation has fewer than 32 memory domains, `mdstallh` should be hardwired to zero.
 
-NOTE: An example of partial implementation of `MDSTALL.md`/`MDSTALLH.mdh` is a system with a display controller, which is a latency-sensitive device. On updating the IOPMP, the transactions initiated from the display controller should not be stalled. Thus, software can always use `MDSTALL.exempt`=1 and `MDSTALL.md[_j_]`=1, where MD _j_ is the memory domain for the frame buffer that the display controller keeps accessing. Thus, the system only needs to implement `MDSTALL.md[_j_]`.
+NOTE: An example of partial implementation of `mdstall.MD`/`mdstallh.MDH` is a system with a display controller, which is a latency-sensitive device. On updating the IOPMP, the transactions initiated from the display controller should not be stalled. Thus, software can always use `mdstall.EXEMPT`=1 and `mdstall.MD[_j_]`=1, where MD _j_ is the memory domain for the frame buffer that the display controller keeps accessing. Thus, the system only needs to implement `mdstall.MD[_j_]`.
 
-`MDSTALL.is_busy` can be hardwired to 0 if any `MDSTALL` and `RRIDSCP` writing won't cause a race condition of the transactions still under checking and the subsequent setting updates.
+`mdstall.IS_BUSY` can be hardwired to 0 if any `mdstall` and `rridscp` writing won't cause a race condition of the transactions still under checking and the subsequent setting updates.
 
-If whole `MDSTALL` is not implemented, `MDSTALL`, `MDSTALLH`, `RRIDSCP` and `ERR_CFG.stall_violation_en` should always return zero.
+If whole `mdstall` is not implemented, `mdstall`, `mdstallh`, `rridscp` and `err_cfg.STALL_VIOLATION_EN` should always return zero.
 
-If `RRIDSCP` is not implemented, it always returns zero. Software can test if it is implemented by writing a zero and then reading it back. Any IOPMP implementing `RRIDSCP` should not return a zero in `RRIDSCP.stat` in this case.
+If `rridscp` is not implemented, it always returns zero. Software can test if it is implemented by writing a zero and then reading it back. Any IOPMP implementing `rridscp` should not return a zero in `rridscp.STAT` in this case.
 
-It is unnecessary to allow every implemented RRID to be selectable by `RRIDSCP.rrid`. If `RRIDSCP.rrid` stores or returns an unimplemented or unselectable RRID, it returns `RRIDSCP.stat` = 3.
+It is unnecessary to allow every implemented RRID to be selectable by `rridscp.RRID`. If `rridscp.RRID` stores or returns an unimplemented or unselectable RRID, it returns `rridscp.STAT` = 3.
 
-To handle reserved operation of `RRIDSCP.op` (0x3), IOPMP can ignore corresponding writes or update `RRIDSCP.rrid` only.
+To handle reserved operation of `rridscp.OP` (0x3), IOPMP can ignore corresponding writes or update `rridscp.RRID` only.
 
-`ERR_CFG.stall_violation_en` is a WARL field so it can be programmable or fixed.
+`err_cfg.STALL_VIOLATION_EN` is a WARL field so it can be programmable or fixed.

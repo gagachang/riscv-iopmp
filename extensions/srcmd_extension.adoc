@@ -10,21 +10,21 @@ Motivation: In the baseline specification, if RRID 'A' requires Read-Write (RW) 
 
 The SPS extension addresses this by adding a second layer of permission checking within the SRCMD table. This allows a single, shared IOPMP entry to define the address region with a superset of permissions (e.g., both read and write permissions are allowed), while the additional permission registers restrict the permissions for each RRID individually. This allows multiple RRIDs to share a single memory domain and its corresponding entries, significantly conserving the total number of entries required.
 
-The field `sps_en` in register `HWCFG2` <<#REG_EXT_HWCFG2,Hardware Configuration 2>> indicates if the IOPMP implements the SPS extension.
+The field `SPS_EN` in register `hwcfg2` <<#REG_EXT_HWCFG2,Hardware Configuration 2>> indicates if the IOPMP implements the SPS extension.
 
-When the SPS extension is implemented, each SRCMD table entry additionally defines permission registers: `SRCMD_R(_s_)`, `SRCMD_W(_s_)`, and `SRCMD_X(_s_)`, as well as `SRCMD_RH(_s_)`, `SRCMD_WH(_s_)`, and `SRCMD_XH(_s_)` if applicable. <<#REG_EXT_SRCMD_R,RRID _s_ Read Permission>>, <<#REG_EXT_SRCMD_W,RRID _s_ Write Permission>>, and <<#REG_EXT_SRCMD_X,RRID _s_ Instruction Fetch Permission>> describe the details of these registers.
+When the SPS extension is implemented, each SRCMD table entry additionally defines permission registers: `srcmd_r(_s_)`, `srcmd_w(_s_)`, and `srcmd_x(_s_)`, as well as `srcmd_rh(_s_)`, `srcmd_wh(_s_)`, and `srcmd_xh(_s_)` if applicable. <<#REG_EXT_SRCMD_R,RRID _s_ Read Permission>>, <<#REG_EXT_SRCMD_W,RRID _s_ Write Permission>>, and <<#REG_EXT_SRCMD_X,RRID _s_ Instruction Fetch Permission>> describe the details of these registers.
 
-Register `SRCMD_R(_s_)`, `SRCMD_W(_s_)`, and `SRCMD_X(_s_)` each has a single field, `SRCMD_R(_s_).md`, `SRCMD_W(_s_).md`, and `SRCMD_X(_s_).md`, respectively representing the read, write, and instruction fetch permissions of memory domain 0 to 30 for requester _s_.
-Register `SRCMD_RH(_s_)`, `SRCMD_WH(_s_)`, `SRCMD_XH(_s_)` each has a single field, `SRCMD_RH(_s_).mdh`, `SRCMD_WH(_s_).mdh`, and `SRCMD_XH(_s_).mdh`, respectively representing the read, write, and instruction fetch permissions of memory domain 31 to 62 for requester _s_.
-Register `SRCMD_RH(_s_)`, `SRCMD_WH(_s_)`, and `SRCMD_XH(_s_)` are implemented if `HWCFG0.md_num` > 31.
+Register `srcmd_r(_s_)`, `srcmd_w(_s_)`, and `srcmd_x(_s_)` each has a single field, `srcmd_r(_s_).MD`, `srcmd_w(_s_).MD`, and `srcmd_x(_s_).MD`, respectively representing the read, write, and instruction fetch permissions of memory domain 0 to 30 for requester _s_.
+Register `srcmd_rh(_s_)`, `srcmd_wh(_s_)`, `srcmd_xh(_s_)` each has a single field, `srcmd_rh(_s_).MDH`, `srcmd_wh(_s_).MDH`, and `srcmd_xh(_s_).MDH`, respectively representing the read, write, and instruction fetch permissions of memory domain 31 to 62 for requester _s_.
+Register `srcmd_rh(_s_)`, `srcmd_wh(_s_)`, and `srcmd_xh(_s_)` are implemented if `hwcfg0.MD_NUM` > 31.
 
 .An example block diagram of an IOPMP with the SPS extension. It illustrates the checking flow of an IOPMP with the SPS extension. The IOPMP first looks up the SRCMD table according to the RRID carried by the incoming transaction to retrieve associated MD indices and the corresponding permissions related to these MDs. By the MD indices, the IOPMP looks up the MDCFG table to get the belonging entry indices. The final step checks the access right according to the above entry indices and corresponding permissions.
 image::{imgpath}/iopmp_unit_block_diagram_other_formats.png[]
 
 
-The extension shares the same locks as `SRCMD_EN(_s_)` and `SRCMD_ENH(_s_)`. Setting lock to `SRCMD_EN(_s_).l` locks `SRCMD_R(_s_)`, `SRCMD_RH(_s_)`, `SRCMD_W(_s_)`, `SRCMD_WH(_s_)`, `SRCMD_X(_s_)`, and `SRCMD_XH(_s_)`.
-`MDLCK.md[_m_]` locks `SRCMD_R(_s_).md[_m_]`, `SRCMD_W(_s_).md[_m_]`, and `SRCMD_X(_s_).md[_m_]` for all existing RRID _s_.
-`MDLCKH.mdh[_m_]` also locks `SRCMD_RH(_s_).mdh[_m_]`, `SRCMD_WH(_s_).mdh[_m_]`, and `SRCMD_XH(_s_).mdh[_m_]` for all existing RRID _s_.
-`SRCMD_R(_s_)`, `SRCMD_RH(_s_)`, `SRCMD_W(_s_)`, `SRCMD_WH(_s_)`, `SRCMD_X(_s_)`, and `SRCMD_XH(_s_)` can have prelocked bits fully or partially based on presets of `MDLCK.md`, `MDLCK.mdh`, and `SRCMD_EN.l`.
+The extension shares the same locks as `srcmd_en(_s_)` and `srcmd_enh(_s_)`. Setting lock to `srcmd_en(_s_).L` locks `srcmd_r(_s_)`, `srcmd_rh(_s_)`, `srcmd_w(_s_)`, `srcmd_wh(_s_)`, `srcmd_x(_s_)`, and `srcmd_xh(_s_)`.
+`mdlck.MD[_m_]` locks `srcmd_r(_s_).MD[_m_]`, `srcmd_w(_s_).MD[_m_]`, and `srcmd_x(_s_).MD[_m_]` for all existing RRID _s_.
+`mdlckh.MDH[_m_]` also locks `srcmd_rh(_s_).MDH[_m_]`, `srcmd_wh(_s_).MDH[_m_]`, and `srcmd_xh(_s_).MDH[_m_]` for all existing RRID _s_.
+`srcmd_r(_s_)`, `srcmd_rh(_s_)`, `srcmd_w(_s_)`, `srcmd_wh(_s_)`, `srcmd_x(_s_)`, and `srcmd_xh(_s_)` can have prelocked bits fully or partially based on presets of `mdlck.MD`, `mdlck.MDH`, and `srcmd_en.L`.
 
-The extension has two sets of permission settings: one from IOPMP entry and the other from SPS registers (`SRCMD_R`/`SRCMD_W`/`SRCMD_X`/`SRCMD_RH`/`SRCMD_WH`/`SRCMD_XH`). A transaction is legal only if it is permitted by both the SRCMD table (SPS) permission and the matching entry's permission. A transaction fails the SPS check if it violates either of the permission settings. That is, the extension can only be used to restrict the permissions defined on an entry, not grant new permissions.
+The extension has two sets of permission settings: one from IOPMP entry and the other from SPS registers (`srcmd_r`/`srcmd_w`/`srcmd_x`/`srcmd_rh`/`srcmd_wh`/`srcmd_xh`). A transaction is legal only if it is permitted by both the SRCMD table (SPS) permission and the matching entry's permission. A transaction fails the SPS check if it violates either of the permission settings. That is, the extension can only be used to restrict the permissions defined on an entry, not grant new permissions.
