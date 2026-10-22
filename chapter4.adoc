@@ -78,6 +78,7 @@ Other regions in offset 0x0000 to (0x1000 + `hwcfg1.RRID_NUM` × 32) are reserve
 INFO registers are used to indicate the IOPMP instance configuration info.
 
 ==== Version Number and Vendor ID (`version`) Register
+.Fields of the `version` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field      |Bits   |R/W   |Default    |Description
@@ -86,6 +87,7 @@ INFO registers are used to indicate the IOPMP instance configuration info.
 |===
 
 ==== Implementation ID (`implementation`) Register
+.Fields of the `implementation` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field       |Bits   |R/W    |Default    |Description
@@ -94,6 +96,7 @@ INFO registers are used to indicate the IOPMP instance configuration info.
 
 [#HWCFG0]
 ==== Hardware Configuration 0 (`hwcfg0`) Register
+.Fields of the `hwcfg0` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field          |Bits   |R/W    |Default   |Description
@@ -108,6 +111,7 @@ INFO registers are used to indicate the IOPMP instance configuration info.
 |===
 
 ==== Hardware Configuration 1 (`hwcfg1`) Register
+.Fields of the `hwcfg1` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field       |Bits   |R/W    |Default    |Description
@@ -125,6 +129,7 @@ See xref:APPLICATION_NOTE[xrefstyle=full].
 ==== User-defined Hardware Configuration (`hwcfg_user`) Register
 `hwcfg_user` is an optional register to provide users to define their own configurations.
 
+.Fields of the `hwcfg_user` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field    |Bits   |R/W    |Default    |Description
@@ -132,6 +137,7 @@ See xref:APPLICATION_NOTE[xrefstyle=full].
 |===
 
 ==== Entry Array Offset (`entryoffset`) Register
+.Fields of the `entryoffset` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field    |Bits   |R/W    |Default    |Description
@@ -142,6 +148,8 @@ See xref:APPLICATION_NOTE[xrefstyle=full].
 
 ==== Memory Domain Lock (`mdlck` and `mdlckh`) Registers
 `mdlck` is a register with a bitmap field to indicate which lower MDs are locked in the SRCMD table.
+
+.Fields of the `mdlck` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field      |Bits       |R/W    |Default    |Description
@@ -150,6 +158,8 @@ See xref:APPLICATION_NOTE[xrefstyle=full].
 |===
 
 `mdlckh` is a register with a bitmap field to indicate which higher MDs are locked in the SRCMD table.
+
+.Fields of the `mdlckh` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field      |Bits       |R/W    |Default    |Description
@@ -159,6 +169,7 @@ See xref:APPLICATION_NOTE[xrefstyle=full].
 ==== MDCFG Table Lock (`mdcfglck`) Register
 `mdcfglck` is the lock register for the MDCFG table.
 
+.Fields of the `mdcfglck` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
@@ -172,6 +183,7 @@ If `F` {ge} `hwcfg0.MD_NUM`, all MDCFG entries are locked.
 ==== Entry Array Lock (`entrylck`) Register
 `entrylck` is the lock register to entry array.
 
+.Fields of the `entrylck` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits       |R/W    |Default    |Description
@@ -190,6 +202,7 @@ This convention helps avoid accidentally clearing adjacent status bits during re
 ==== Error Configuration (`err_cfg`) Register
 `err_cfg` is a read/write WARL register used to configure the global error reporting behavior on an IOPMP violation.
 
+.Fields of the `err_cfg` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits   |R/W    |Default    |Description
@@ -206,6 +219,8 @@ To suppress an error response on an IOPMP rule violation.
 
 ==== Error Information (`err_info`) Register
 `err_info` captures more detailed error information.
+
+.Fields of the `err_info` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits   |R/W   |Default |Description
@@ -237,6 +252,7 @@ When the bus matrix doesn't have a signal to indicate an instruction fetch, the 
 ==== Errored Request Address (`err_reqaddr` and `err_reqaddrh`) Registers
 `err_reqaddr` indicates the lower errored request address of the first captured violation.
 
+.Fields of the `err_reqaddr` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field    |Bits     |R/W    |Default    |Description
@@ -244,6 +260,8 @@ When the bus matrix doesn't have a signal to indicate an instruction fetch, the 
 |===
 
 `err_reqaddrh` indicates the higher errored request address of the first captured violation.
+
+.Fields of the `err_reqaddrh` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field    |Bits     |R/W    |Default    |Description
@@ -252,6 +270,8 @@ When the bus matrix doesn't have a signal to indicate an instruction fetch, the 
 
 ==== Errored Request IDs (`err_reqid`) Register
 `err_reqid` indicates the errored RRID and entry index of the first captured violation.
+
+.Fields of the `err_reqid` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits       |R/W    |Default    |Description
@@ -262,6 +282,7 @@ When the bus matrix doesn't have a signal to indicate an instruction fetch, the 
 ==== User-defined Error Information (`err_user(0)` ~ `err_user(7)`) Registers
 `err_user(0)` ~ `err_user(7)` are optional registers to provide users to define their own error capture information.
 
+.Fields of the `err_user(0)` ~ `err_user(7)` registers
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits       |R/W    |Default    |Description
@@ -273,6 +294,7 @@ The MDCFG table is a lookup to specify the number of IOPMP entries that is assoc
 
 ==== MD _m_ Configuration (`mdcfg(_m_)`) Register
 
+.Fields of the `mdcfg(_m_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits       |R/W    |Default    |Description
@@ -291,6 +313,8 @@ The MDCFG table is a lookup to specify the number of IOPMP entries that is assoc
 ==== RRID _s_ MD Enabling (`srcmd_en(_s_)` and `srcmd_enh(_s_)`) Registers
 
 `srcmd_en(_s_)` is the SRCMD table register of RRID _s_ for lower MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_en(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits       |R/W    |Default    |Description
@@ -299,6 +323,8 @@ The MDCFG table is a lookup to specify the number of IOPMP entries that is assoc
 |===
 
 `srcmd_enh(_s_)` is the SRCMD table register of RRID _s_ for higher MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_enh(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits       |R/W    |Default    |Description
@@ -314,6 +340,8 @@ This section uses _i_ to denote the index of an IOPMP entry. Each register below
 A complete 64-bit address consists of these two registers, `entry_addr` and `entry_addrh`. However, an IOPMP can only manage a segment of space, so an implementation would have a certain number of the most significant bits that are the same among all entries. These bits are allowed to be hardwired.
 
 `entry_addr(_i_)` is bit 33:2 of address (region) for entry _i_, _i_ =0...`hwcfg1.ENTRY_NUM`-1
+
+.Fields of the `entry_addr(_i_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits       |R/W    |Default  |Description
@@ -321,6 +349,8 @@ A complete 64-bit address consists of these two registers, `entry_addr` and `ent
 |===
 
 `entry_addrh(_i_)` is bit 65:34 of address (region) for entry _i_, _i_ =0...`hwcfg1.ENTRY_NUM`-1
+
+.Fields of the `entry_addrh(_i_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits      |R/W    |Default |Description
@@ -329,6 +359,7 @@ A complete 64-bit address consists of these two registers, `entry_addr` and `ent
 
 ==== Entry _i_ Configuration (`entry_cfg(_i_)`) Register
 
+.Fields of the `entry_cfg(_i_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits       |R/W    |Default    |Description
@@ -349,6 +380,7 @@ Bits `R`, `W`, and `X`, grant read, write, or instruction fetch permission, resp
 ==== User-defined Entry _i_ Configuration (`entry_user_cfg(_i_)`) Register
 `entry_user_cfg` are implementation-defined registers that allows users to define their own additional IOPMP check rules beside the rules.
 
+.Fields of the `entry_user_cfg(_i_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits       |R/W    |Default    |Description

@@ -88,6 +88,7 @@ This chapter also introduces an additional error type (`err_info.ETYPE`).
 [#REG_EXT_HWCFG2]
 ==== Hardware Configuration 2 (`hwcfg2`) Register
 
+.Fields of the `hwcfg2` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field            |Bits   |R/W  |Default |Description
@@ -109,6 +110,7 @@ If `hwcfg2.NON_PRIO_EN` is 0, the default value of `PRIO_ENT_PROG` is DC.
 ==== MD-Based Stall Control (`mdstall` and `mdstallh`) Registers
 `mdstall` is optional and used to support atomicity issue while programming the IOPMP, as the IOPMP rule may not be updated in a single transaction.
 
+.Fields of the `mdstall` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field       |Bits   |R/W    |Default    |Description
@@ -128,6 +130,7 @@ Please refer <<#STALL_TRANSACTIONS, Stall transactions>> for detailed operations
 
 `mdstallh` is optional and is a higher MD part of `mdstall`.
 
+.Fields of the `mdstallh` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field       |Bits   |R/W    |Default    |Description
@@ -138,6 +141,7 @@ Please refer <<#STALL_TRANSACTIONS, Stall transactions>> for detailed operations
 ==== RRID Cherry Pick Stall Control (`rridscp`) Register
 `rridscp` is optional and used to support fine-grained control for <<#REG_EXT_MDSTALL,MD-Based Stall Control>>.
 
+.Fields of the `rridscp` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field       |Bits   |R/W    |Default    |Description
@@ -159,6 +163,7 @@ Please refer <<#STALL_TRANSACTIONS, Stall transactions>> for detailed operations
 ==== Error Configuration (`err_cfg`) Register with All Extensions
 `err_cfg` is a read/write WARL register used to configure the global error reporting behavior on an IOPMP violation.
 
+.Fields of the `err_cfg` register with all extensions
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field                |Bits   |R/W    |Default    |Description
@@ -187,6 +192,7 @@ Error status bits that are cleared by software use the RW1C convention unless ot
 RW1C allows software to acknowledge a pending status bit by writing 1 to the selected bit, while writing 0 to a bit leaves that bit unchanged.
 This convention helps avoid accidentally clearing adjacent status bits during read-modify-write sequences and prevents software from writing arbitrary values into hardware-generated status fields.
 
+.Fields of the `err_info` register with all extensions
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field      |Bits   |R/W   |Default |Description
@@ -220,6 +226,7 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 
 [#REG_EXT_ERR_MFR]
 ==== Multi-Faults Record (`err_mfr`) Register
+.Fields of the `err_mfr` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits     |R/W    |Default    |Description
@@ -236,6 +243,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 ==== MSI Message Address (`err_msiaddr` and `err_msiaddrh`) Registers
 
 `err_msiaddr` indicates the lower MSI message address for error reporting.
+
+.Fields of the `err_msiaddr` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field         |Bits       |R/W    |Default    |Description
@@ -243,6 +252,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 |===
 
 `err_msiaddrh` indicates the higher MSI message address for error reporting.
+
+.Fields of the `err_msiaddrh` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field         |Bits       |R/W    |Default    |Description
@@ -253,6 +264,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 ==== RRID _s_ Read Permission (`srcmd_r(_s_)` and `srcmd_rh(_s_)`) Registers
 
 `srcmd_r(_s_)` is the read permission register of RRID _s_ for lower MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_r(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
@@ -261,6 +274,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 |===
 
 `srcmd_rh(_s_)` is the read permission register of RRID _s_ for higher MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_rh(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
@@ -271,6 +286,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 ==== RRID _s_ Write Permission (`srcmd_w(_s_)` and `srcmd_wh(_s_)`) Registers
 
 `srcmd_w(_s_)` is the write permission register of RRID _s_ for lower MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_w(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
@@ -279,6 +296,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 |===
 
 `srcmd_wh(_s_)` is the write permission register of RRID _s_ for higher MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_wh(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
@@ -289,6 +308,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 ==== RRID _s_ Instruction Fetch Permission (`srcmd_x(_s_)` and `srcmd_xh(_s_)`) Registers
 
 `srcmd_x(_s_)` is the instruction fetch permission register of RRID _s_ for lower MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_x(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
@@ -297,6 +318,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 |===
 
 `srcmd_xh(_s_)` is the instruction fetch permission register of RRID _s_ for higher MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+
+.Fields of the `srcmd_xh(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
@@ -306,6 +329,7 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 [#REG_EXT_ENTRY_CFG]
 ==== Entry _i_ Configuration (`entry_cfg(_i_)`) Register with All Extensions
 
+.Fields of the `entry_cfg(_i_)` register with all extensions
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field   |Bits       |R/W    |Default    |Description
