@@ -23,8 +23,8 @@ image::{imgpath}/iopmp_unit_block_diagram_other_formats.png[]
 
 
 The extension shares the same locks as `srcmd_en(_s_)` and `srcmd_enh(_s_)`. Setting lock to `srcmd_en(_s_).L` locks `srcmd_r(_s_)`, `srcmd_rh(_s_)`, `srcmd_w(_s_)`, `srcmd_wh(_s_)`, `srcmd_x(_s_)`, and `srcmd_xh(_s_)`.
-`mdlck.MD[_m_]` locks `srcmd_r(_s_).MD[_m_]`, `srcmd_w(_s_).MD[_m_]`, and `srcmd_x(_s_).MD[_m_]` for all existing RRID _s_.
-`mdlckh.MDH[_m_]` also locks `srcmd_rh(_s_).MDH[_m_]`, `srcmd_wh(_s_).MDH[_m_]`, and `srcmd_xh(_s_).MDH[_m_]` for all existing RRID _s_.
-`srcmd_r(_s_)`, `srcmd_rh(_s_)`, `srcmd_w(_s_)`, `srcmd_wh(_s_)`, `srcmd_x(_s_)`, and `srcmd_xh(_s_)` can have prelocked bits fully or partially based on presets of `mdlck.MD`, `mdlck.MDH`, and `srcmd_en.L`.
+The `mdlck.MD[_m_]` bit locks `srcmd_r(_s_).MD[_m_]`, `srcmd_w(_s_).MD[_m_]`, and `srcmd_x(_s_).MD[_m_]` for all existing RRID _s_.
+The `mdlckh.MDH[_m_]` bit also locks `srcmd_rh(_s_).MDH[_m_]`, `srcmd_wh(_s_).MDH[_m_]`, and `srcmd_xh(_s_).MDH[_m_]` for all existing RRID _s_.
+The `srcmd_r(_s_)`, `srcmd_rh(_s_)`, `srcmd_w(_s_)`, `srcmd_wh(_s_)`, `srcmd_x(_s_)`, and `srcmd_xh(_s_)` registers can have prelocked bits fully or partially based on presets of `mdlck.MD`, `mdlck.MDH`, and `srcmd_en.L`.
 
 The extension has two sets of permission settings: one from IOPMP entry and the other from SPS registers (`srcmd_r`/`srcmd_w`/`srcmd_x`/`srcmd_rh`/`srcmd_wh`/`srcmd_xh`). A transaction is legal only if it is permitted by both the SRCMD table (SPS) permission and the matching entry's permission. A transaction fails the SPS check if it violates either of the permission settings. That is, the extension can only be used to restrict the permissions defined on an entry, not grant new permissions.

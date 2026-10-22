@@ -14,7 +14,7 @@ Each memory domain is assigned exactly _k_ IOPMP entry indices. The range of IOP
 
 This optimization breaks the sequential data dependency of the two-stage lookup, enabling a faster, simpler, and lower-area implementation. Implementations adopting this model can omit the MDCFG table and the `mdcfglck` register entirely.
 
-`hwcfg3.MDCFG_FMT` (<<#REG_EXT_HWCFG3,Hardware Configuration 3>>) indicates whether the MDCFG table is reduced and whether _k_ is fixed or programmable, and `hwcfg3.MD_ENTRY_NUM` + 1 is the _k_ value of the IOPMP instance. When _k_ is programmable, an implementation can use `hwcfg0.ENABLE` as the lock bit of `hwcfg3.MD_ENTRY_NUM`.
+The `hwcfg3.MDCFG_FMT` field (<<#REG_EXT_HWCFG3,Hardware Configuration 3>>) indicates whether the MDCFG table is reduced and whether _k_ is fixed or programmable, and `hwcfg3.MD_ENTRY_NUM` + 1 is the _k_ value of the IOPMP instance. When _k_ is programmable, an implementation can use `hwcfg0.ENABLE` as the lock bit of `hwcfg3.MD_ENTRY_NUM`.
 
 [NOTE]
 ====

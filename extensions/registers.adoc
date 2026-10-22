@@ -108,7 +108,7 @@ If `hwcfg2.NON_PRIO_EN` is 0, the default value of `PRIO_ENT_PROG` is DC.
 
 [#REG_EXT_MDSTALL]
 ==== MD-Based Stall Control (`mdstall` and `mdstallh`) Registers
-`mdstall` is optional and used to support atomicity issue while programming the IOPMP, as the IOPMP rule may not be updated in a single transaction.
+The `mdstall` register is optional and used to support atomicity issue while programming the IOPMP, as the IOPMP rule may not be updated in a single transaction.
 
 .Fields of the `mdstall` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
@@ -128,7 +128,7 @@ Please refer <<#STALL_TRANSACTIONS, Stall transactions>> for detailed operations
 |`MD`        |31:1   |WARL   |0          |Writing `mdstall.MD[__m__]`=1 selects MD _m_; reading `mdstall.MD[__m__]` = 1 means MD __m__ selected.
 |===
 
-`mdstallh` is optional and is a higher MD part of `mdstall`.
+The `mdstallh` register is optional and is a higher MD part of `mdstall`.
 
 .Fields of the `mdstallh` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
@@ -139,7 +139,7 @@ Please refer <<#STALL_TRANSACTIONS, Stall transactions>> for detailed operations
 
 [#REG_EXT_RRIDSCP]
 ==== RRID Cherry Pick Stall Control (`rridscp`) Register
-`rridscp` is optional and used to support fine-grained control for <<#REG_EXT_MDSTALL,MD-Based Stall Control>>.
+The `rridscp` register is optional and used to support fine-grained control for <<#REG_EXT_MDSTALL,MD-Based Stall Control>>.
 
 .Fields of the `rridscp` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
@@ -161,13 +161,13 @@ Please refer <<#STALL_TRANSACTIONS, Stall transactions>> for detailed operations
 
 [#REG_EXT_ERR_CFG]
 ==== Error Configuration (`err_cfg`) Register with All Extensions
-`err_cfg` is a read/write WARL register used to configure the global error reporting behavior on an IOPMP violation.
+The `err_cfg` register is read/write WARL and is used to configure the global error reporting behavior on an IOPMP violation.
 
 .Fields of the `err_cfg` register with all extensions
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field                |Bits   |R/W    |Default    |Description
-|`L`                  |0:0    |W1SS   |IMP        |`err_cfg.L` lock bit for the `err_cfg` register.
+|`L`                  |0:0    |W1SS   |IMP        |Lock bit for the `err_cfg` register.
 |`IE`                 |1:1    |WARL   |IMP        |Enable the interrupt of the IOPMP rule violation.
 |`RS`                 |2:2    |WARL   |IMP       a|
 
@@ -187,7 +187,7 @@ To suppress an error response on an IOPMP rule violation.
 
 [#REG_EXT_ERR_INFO]
 ==== Error Information (`err_info`) Register with All Extensions
-`err_info` captures more detailed error information.
+The `err_info` register captures more detailed error information.
 Error status bits that are cleared by software use the RW1C convention unless otherwise specified.
 RW1C allows software to acknowledge a pending status bit by writing 1 to the selected bit, while writing 0 to a bit leaves that bit unchanged.
 This convention helps avoid accidentally clearing adjacent status bits during read-modify-write sequences and prevents software from writing arbitrary values into hardware-generated status fields.
@@ -230,8 +230,8 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field  |Bits     |R/W    |Default    |Description
-|`SVW`  |15:0     |R      |DC         | Subsequent violations in the window indexed by `SVI`. `SVW[_j_]`=1 for the at least one subsequent violation issued from RRID= `SVI` * 16 + _j_.
-|`SVI`  |27:16    |WARL   |0          | Window's index to search subsequent violations. When read, IOPMP sequentially scans all windows from `SVI` until one subsequent violation is found. Once the last implemented window is scanned, the next window to be scanned is the first record window (index is 0). `SVI` indexes the found subsequent violation or `SVI` has been rounded back to the same value. After read, the window's content, `SVW`, should be clean.
+|`SVW`  |15:0     |R      |DC         | Subsequent violations in the window indexed by `SVI`. Bit _j_ = 1 indicates at least one subsequent violation issued from RRID = `SVI` * 16 + _j_.
+|`SVI`  |27:16    |WARL   |0          | Window's index to search subsequent violations. When read, IOPMP sequentially scans all windows from `SVI` until one subsequent violation is found. Once the last implemented window is scanned, the next window to be scanned is the first record window (index is 0). The `SVI` field indexes the found subsequent violation or `SVI` has been rounded back to the same value. After read, the window's content, `SVW`, should be clean.
 |`RSV`   |30:28    |ZERO   |0         |Must be zero on write, reserved for future.
 |`SVS`   |31:31    |R      |0        a|The status of this window's content:
 
@@ -242,7 +242,7 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 [#REG_EXT_ERR_MSIADDR]
 ==== MSI Message Address (`err_msiaddr` and `err_msiaddrh`) Registers
 
-`err_msiaddr` indicates the lower MSI message address for error reporting.
+The `err_msiaddr` register indicates the lower MSI message address for error reporting.
 
 .Fields of the `err_msiaddr` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
@@ -251,7 +251,7 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 |`MSIADDR`     |31:0       |WARL   |IMP        |The address to trigger MSI. For `hwcfg0.ADDRH_EN`=0, it contains bits 33 to 2 of the address; otherwise, it contains bits 31 to 0. Implemented only if `hwcfg2.MSI_EN`=1.
 |===
 
-`err_msiaddrh` indicates the higher MSI message address for error reporting.
+The `err_msiaddrh` register indicates the higher MSI message address for error reporting.
 
 .Fields of the `err_msiaddrh` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
@@ -263,67 +263,67 @@ Implemented only for `hwcfg2.MFR_EN`=1, otherwise, ZERO.
 [#REG_EXT_SRCMD_R]
 ==== RRID _s_ Read Permission (`srcmd_r(_s_)` and `srcmd_rh(_s_)`) Registers
 
-`srcmd_r(_s_)` is the read permission register of RRID _s_ for lower MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+The read permission register of RRID _s_ for lower MDs is `srcmd_r(_s_)`, _s_ = 0...`hwcfg1.RRID_NUM`-1.
 
 .Fields of the `srcmd_r(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
 |`RSV`     |0:0        |ZERO   |0          |Must be zero on write, reserved for future.
-|`MD`      |31:1       |WARL   |DC         |`srcmd_r(_s_).MD[_m_]` = 1 indicates RRID _s_ has read access and instruction fetch permission to the corresponding MD _m_.
+|`MD`      |31:1       |WARL   |DC         |If bit _m_ is 1, RRID _s_ has read access and instruction fetch permission to the corresponding MD _m_.
 |===
 
-`srcmd_rh(_s_)` is the read permission register of RRID _s_ for higher MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+The read permission register of RRID _s_ for higher MDs is `srcmd_rh(_s_)`, _s_ = 0...`hwcfg1.RRID_NUM`-1.
 
 .Fields of the `srcmd_rh(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
-|`MDH`     |31:0       |WARL   |DC         |`srcmd_rh(_s_).MDH[_m_]` = 1 indicates RRID _s_ has read access and instruction fetch permission to MD (_m_+31).
+|`MDH`     |31:0       |WARL   |DC         |If bit _m_ is 1, RRID _s_ has read access and instruction fetch permission to MD (_m_+31).
 |===
 
 [#REG_EXT_SRCMD_W]
 ==== RRID _s_ Write Permission (`srcmd_w(_s_)` and `srcmd_wh(_s_)`) Registers
 
-`srcmd_w(_s_)` is the write permission register of RRID _s_ for lower MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+The write permission register of RRID _s_ for lower MDs is `srcmd_w(_s_)`, _s_ = 0...`hwcfg1.RRID_NUM`-1.
 
 .Fields of the `srcmd_w(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
 |`RSV`     |0:0        |ZERO   |0          |Must be zero on write, reserved for future.
-|`MD`      |31:1       |WARL   |DC         |`srcmd_w(_s_).MD[_m_]` = 1 indicates RRID _s_ has write permission to the corresponding MD _m_.
+|`MD`      |31:1       |WARL   |DC         |If bit _m_ is 1, RRID _s_ has write permission to the corresponding MD _m_.
 |===
 
-`srcmd_wh(_s_)` is the write permission register of RRID _s_ for higher MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+The write permission register of RRID _s_ for higher MDs is `srcmd_wh(_s_)`, _s_ = 0...`hwcfg1.RRID_NUM`-1.
 
 .Fields of the `srcmd_wh(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
-|`MDH`     |31:0       |WARL   |DC         |`srcmd_wh(_s_).MDH[_m_]` = 1 indicates RRID _s_ has write permission to MD (_m_+31).
+|`MDH`     |31:0       |WARL   |DC         |If bit _m_ is 1, RRID _s_ has write permission to MD (_m_+31).
 |===
 
 [#REG_EXT_SRCMD_X]
 ==== RRID _s_ Instruction Fetch Permission (`srcmd_x(_s_)` and `srcmd_xh(_s_)`) Registers
 
-`srcmd_x(_s_)` is the instruction fetch permission register of RRID _s_ for lower MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+The instruction fetch permission register of RRID _s_ for lower MDs is `srcmd_x(_s_)`, _s_ = 0...`hwcfg1.RRID_NUM`-1.
 
 .Fields of the `srcmd_x(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
 |`RSV`     |0:0        |ZERO   |0          |Must be zero on write, reserved for future.
-|`MD`      |31:1       |WARL   |DC         |`srcmd_x(_s_).MD[_m_]` = 1 indicates RRID _s_ has instruction fetch permission to the corresponding MD _m_.
+|`MD`      |31:1       |WARL   |DC         |If bit _m_ is 1, RRID _s_ has instruction fetch permission to the corresponding MD _m_.
 |===
 
-`srcmd_xh(_s_)` is the instruction fetch permission register of RRID _s_ for higher MDs, _s_ = 0...`hwcfg1.RRID_NUM`-1.
+The instruction fetch permission register of RRID _s_ for higher MDs is `srcmd_xh(_s_)`, _s_ = 0...`hwcfg1.RRID_NUM`-1.
 
 .Fields of the `srcmd_xh(_s_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
 |===
 |Field     |Bits       |R/W    |Default    |Description
-|`MDH`     |31:0       |WARL   |DC         |`srcmd_xh(_s_).MDH[_m_]` = 1 indicates RRID _s_ has instruction fetch permission to MD (_m_+31).
+|`MDH`     |31:0       |WARL   |DC         |If bit _m_ is 1, RRID _s_ has instruction fetch permission to MD (_m_+31).
 |===
 
 [#REG_EXT_ENTRY_CFG]

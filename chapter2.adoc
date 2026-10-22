@@ -57,11 +57,11 @@ Different IOPMP implementations may expose and integrate these ports in differen
 === IOPMP Entries
 An IOPMP entry describes a memory region together with the permissions that apply to it. Each entry is one rule that the IOPMP applies when it filters transactions.
 
-The IOPMP entry array is the set of all entries in an IOPMP instance. `hwcfg1.ENTRY_NUM` reports the number of entries in the array, and the entries are indexed from 0 to `hwcfg1.ENTRY_NUM` - 1. The legal range of `hwcfg1.ENTRY_NUM` is 1 to 65535; the value zero is reserved for future standard use.
+The IOPMP entry array is the set of all entries in an IOPMP instance. The `hwcfg1.ENTRY_NUM` field reports the number of entries in the array, and the entries are indexed from 0 to `hwcfg1.ENTRY_NUM` - 1. The legal range of `hwcfg1.ENTRY_NUM` is 1 to 65535; the value zero is reserved for future standard use.
 
-For an entry indexed by _i_, `entry_addr(_i_)`, `entry_addrh(_i_)`, and `entry_cfg(_i_).A` together encode the memory region; see <<#ADDRESS_MATCHING_MODES, Address Matching Modes>>. `entry_addr(_i_)` and `entry_addrh(_i_)` hold the encoded address for an IOPMP with addresses greater than 34 bits. For addresses less than or equal to 34 bits, only `entry_addr(_i_)` is used. To determine whether `entry_addrh(_i_)` is implemented, software can check `hwcfg0.ADDRH_EN`. Please refer to <<#HWCFG0,Hardware Configuration 0>> for more details about `hwcfg0.ADDRH_EN`.
+For an entry indexed by _i_, `entry_addr(_i_)`, `entry_addrh(_i_)`, and `entry_cfg(_i_).A` together encode the memory region; see <<#ADDRESS_MATCHING_MODES, Address Matching Modes>>. The `entry_addr(_i_)` and `entry_addrh(_i_)` registers hold the encoded address for an IOPMP with addresses greater than 34 bits. For addresses less than or equal to 34 bits, only `entry_addr(_i_)` is used. To determine whether `entry_addrh(_i_)` is implemented, software can check `hwcfg0.ADDRH_EN`. Please refer to <<#HWCFG0,Hardware Configuration 0>> for more details about `hwcfg0.ADDRH_EN`.
 
-`entry_cfg(_i_).R/W/X` indicate the read access, write access, and instruction fetch permission and they are WARL. That is, an implementation can decide which bits are programmable or hardwired and which bit combinations are unwanted.
+The `entry_cfg(_i_).R/W/X` bits indicate the read access, write access, and instruction fetch permission and they are WARL. That is, an implementation can decide which bits are programmable or hardwired and which bit combinations are unwanted.
 
 The entry array contains no entry at an index {ge} `hwcfg1.ENTRY_NUM`. Therefore,
 
@@ -70,7 +70,7 @@ The entry array contains no entry at an index {ge} `hwcfg1.ENTRY_NUM`. Therefore
 
 [#ADDRESS_MATCHING_MODES]
 ==== Address Matching Modes
-`entry_cfg(_i_).A` selects how `entry_addr(_i_)` and `entry_addrh(_i_)` are interpreted as a memory region. The IOPMP uses the address-matching modes of the RISC-V PMP cite:[PrivISA], which also defines the address encodings. The four defined values of `entry_cfg(_i_).A` are shown in <<ADDRESS_MATCHING_MODES_TABLE>>.
+The `entry_cfg(_i_).A` field selects how `entry_addr(_i_)` and `entry_addrh(_i_)` are interpreted as a memory region. The IOPMP uses the address-matching modes of the RISC-V PMP cite:[PrivISA], which also defines the address encodings. The four defined values of `entry_cfg(_i_).A` are shown in <<ADDRESS_MATCHING_MODES_TABLE>>.
 
 [#ADDRESS_MATCHING_MODES_TABLE]
 .Address-matching modes
@@ -88,7 +88,7 @@ but not including, the encoded address of entry _i_
 |A naturally aligned power-of-two region, {ge}8 bytes
 |===
 
-TOR is the only mode whose region depends on another entry, and the entry it depends on is entry _i_-1 in the entry array. If `entry_cfg(0).A` is set to TOR, zero is used for the lower bound. `hwcfg0.TOR_EN` = 1 indicates that the IOPMP supports TOR.
+TOR is the only mode whose region depends on another entry, and the entry it depends on is entry _i_-1 in the entry array. If `entry_cfg(0).A` is set to TOR, zero is used for the lower bound. A value of 1 in `hwcfg0.TOR_EN` indicates that the IOPMP supports TOR.
 
 [#MEMORY_DOMAIN]
 === Memory Domain
@@ -318,12 +318,12 @@ On an illegal transaction, the IOPMP triggers an interrupt if the global interru
 
 [#ERROR_CAPTURE_RECORD]
 ==== Error Capture Record
-The error capture record (`err_info.TTYPE`, `err_info.ETYPE`, `err_reqaddr`, `err_reqaddrh`, `err_reqid`, and `err_user(0)` ~ `err_user(7)`) holds the details of the first captured illegal transaction. `err_info.V` indicates whether the record holds valid content. The IOPMP sets `err_info.V` when it captures an illegal transaction. The bit remains set until software acknowledges the captured illegal transaction by writing 1 to `err_info.V`, which clears the bit and reactivates the recorder.
+The error capture record (`err_info.TTYPE`, `err_info.ETYPE`, `err_reqaddr`, `err_reqaddrh`, `err_reqid`, and `err_user(0)` ~ `err_user(7)`) holds the details of the first captured illegal transaction. The `err_info.V` bit indicates whether the record holds valid content. The IOPMP sets `err_info.V` when it captures an illegal transaction. The bit remains set until software acknowledges the captured illegal transaction by writing 1 to `err_info.V`, which clears the bit and reactivates the recorder.
 
 The IOPMP captures an illegal transaction only if:
 
 * the IOPMP triggers an interrupt or returns a bus error for the transaction; and
-* `err_info.V` = 0, that is, the previously captured illegal transaction, if any, has been acknowledged.
+* the `err_info.V` bit is 0, that is, the previously captured illegal transaction, if any, has been acknowledged.
 
 While `err_info.V` = 1, the record is not updated, even if a new illegal transaction is detected.
 

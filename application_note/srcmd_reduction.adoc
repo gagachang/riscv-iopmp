@@ -26,7 +26,7 @@ Exclusive Format implements a direct mapping where RRID _i_ associates exclusive
 Exclusive Format is particularly effective for embedded systems and resource-constrained environments where minimizing hardware overhead is critical. The format supports up to 63 RRIDs and eliminates the physical SRCMD table implementation entirely. However, designers should note that shared memory regions require duplicated entry settings in this format, which may impact configuration flexibility in systems with extensive resource sharing requirements.
 
 The SRCMD table format is discovered through the `SRCMD_FMT` field in `hwcfg3` register (<<#REG_EXT_HWCFG3,Hardware Configuration 3>>).
-`hwcfg3.SRCMD_FMT` = 1 indicates the SRCMD table format is Exclusive Format.
+A value of 1 in `hwcfg3.SRCMD_FMT` indicates the SRCMD table format is Exclusive Format.
 
 [#SRCMD-MD-indexed]
 ==== SRCMD Table in the MD-indexed Format
@@ -44,7 +44,7 @@ For 0 {le} _m_ {le} 30, `mdlck.MD[_m_]` locks `srcmd_perm(_m_)` and `srcmd_permh
 .An example block diagram of an SRCMD table implementation in the MD-indexed Format.
 image::{imgpath}/srcmd_format2_example.png[]
 
-`srcmd_perm(_m_)` is implemented when `hwcfg3.SRCMD_FMT` = 2, and `srcmd_permh(_m_)` is implemented only when `hwcfg3.SRCMD_FMT` = 2 and `hwcfg1.RRID_NUM` > 16.
+The `srcmd_perm(_m_)` register is implemented when `hwcfg3.SRCMD_FMT` = 2, and the `srcmd_permh(_m_)` register is implemented only when `hwcfg3.SRCMD_FMT` = 2 and `hwcfg1.RRID_NUM` > 16.
 In MD-indexed Format, an IOPMP checks both the permission of `srcmd_perm(h)(_m_)` and the `entry_cfg.R/W/X` permission.
 The instruction fetch permission of `srcmd_perm(h)(_m_)` is considered the same as its corresponding read permission.
 A transaction is legal if either of them allows the transaction.

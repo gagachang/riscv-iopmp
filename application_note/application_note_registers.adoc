@@ -39,15 +39,15 @@ This section summarizes the additional registers and fields required when implem
 |`MDCFG_FMT`       |1:0   |R     |IMP      a|Indicate the MDCFG format:
 
 * 0x0: Format 0. The MDCFG table is implemented.
-* 0x1: Format 1. No MDCFG table. `hwcfg3.MD_ENTRY_NUM` is fixed.
-* 0x2: Format 2. No MDCFG table. `hwcfg3.MD_ENTRY_NUM` is programmable.
+* 0x1: Format 1. No MDCFG table. The `hwcfg3.MD_ENTRY_NUM` field is fixed.
+* 0x2: Format 2. No MDCFG table. The `hwcfg3.MD_ENTRY_NUM` field is programmable.
 * 0x3: reserved.
 
 |`SRCMD_FMT`        |3:2   |R     |IMP      a|Indicate the SRCMD table format:
 
-* 0x0: Format 0 (baseline). `srcmd_en(_s_)` is implemented, and `srcmd_enh(_s_)` is implemented only when `hwcfg0.MD_NUM` > 31.
+* 0x0: Format 0 (baseline). The `srcmd_en(_s_)` register is implemented, and the `srcmd_enh(_s_)` register is implemented only when `hwcfg0.MD_NUM` > 31.
 * 0x1: Exclusive Format. No SRCMD table. RRID _i_ associates exclusively with memory domain _i_, _i_ = 0 ... `hwcfg0.MD_NUM`-1.
-* 0x2: MD-indexed Format. `srcmd_perm(_m_)` is implemented, and `srcmd_permh(_m_)` is implemented only when `hwcfg1.RRID_NUM` > 16.
+* 0x2: MD-indexed Format. The `srcmd_perm(_m_)` register is implemented, and the `srcmd_permh(_m_)` register is implemented only when `hwcfg1.RRID_NUM` > 16.
 * 0x3: reserved.
 
 |`MD_ENTRY_NUM`     |10:4  |WARL |IMP       a|When `hwcfg3.MDCFG_FMT` = 
@@ -55,7 +55,7 @@ This section summarizes the additional registers and fields required when implem
 * 0x0: must be zero
 * 0x1 or 0x2: `MD_ENTRY_NUM` indicates each memory domain has exactly (`MD_ENTRY_NUM` + 1) IOPMP entry indices
 
-`MD_ENTRY_NUM` is locked if `hwcfg0.ENABLE` is 1.
+The `MD_ENTRY_NUM` field is locked if `hwcfg0.ENABLE` is 1.
 
 |`XINR`             |11:11 |R    |IMP       a|Indicates whether the IOPMP treats the instruction fetch accesses as data read accesses.
 All fields related to instruction fetch can be fixed to 0, or not implemented.
@@ -72,7 +72,7 @@ All fields related to instruction fetch can be fixed to 0, or not implemented.
 [#REG_EXT_SRCMD_PERM]
 ==== MD _m_ RRID Permission (`srcmd_perm(_m_)` and `srcmd_permh(_m_)`) Registers
 
-`srcmd_perm(_m_)` is read and write permissions of RRID 0 ~ 15 for MD _m_.
+The `srcmd_perm(_m_)` register holds the read and write permissions of RRID 0 ~ 15 for MD _m_.
 
 .Fields of the `srcmd_perm(_m_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
@@ -82,7 +82,7 @@ All fields related to instruction fetch can be fixed to 0, or not implemented.
 The instruction fetch permission is considered the same as the read permission.
 |===
 
-`srcmd_permh(_m_)` is read and write permissions of RRID 16 ~ 31 for MD _m_.
+The `srcmd_permh(_m_)` register holds the read and write permissions of RRID 16 ~ 31 for MD _m_.
 
 .Fields of the `srcmd_permh(_m_)` register
 [float="center",align="center",cols="<2,<1,<1,<1,<6",options="header"]
