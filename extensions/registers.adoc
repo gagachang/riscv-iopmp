@@ -39,11 +39,10 @@ This chapter also introduces an additional error type (`ERR_INFO.etype`).
 |===
 
 [#EXT_SUMMARY_SRCMD]
-.Register summary of extensions in the SRCMD table.
+.Register summary of extensions in the SRCMD table, _s_ = 0...`HWCFG1.rrid_num`-1.
 [%autowidth, options="header"]
 |===
-3+h|SRCMD table, _s_ = 0...`HWCFG1.rrid_num`-1
-  h|Offset             h|Register          h|Related section(s)
+   |Offset             |Register          |Related section(s)
    |0x1008 + (_s_) × 32 |`SRCMD_R(_s_)`  .6+|<<SPS_EXT>>
    |0x100C + (_s_) × 32 |`SRCMD_RH(_s_)`
    |0x1010 + (_s_) × 32 |`SRCMD_W(_s_)`
@@ -53,11 +52,10 @@ This chapter also introduces an additional error type (`ERR_INFO.etype`).
 |===
 
 [#EXT_SUMMARY_ENTRY]
-.Register and field summary of extensions in entry array.
+.Register and field summary of extensions in entry array, _i_ = 0...`HWCFG1.entry_num`-1.
 [%autowidth, options="header"]
 |===
-5+h|Entry array, _i_ = 0...`HWCFG1.entry_num`-1
-  h|Offset                h|Register           h|Field  h|Bits  h|Related section(s)
+   |Offset                |Register           |Field  |Bits  |Related section(s)
 .6+|`ENTRYOFFSET` +
     + 0x8 + (_i_) × 16  .6+| `ENTRY_CFG(_i_)`   |`sire`  |5:5 .6+|<<PEIS_PEES>>
                                                 |`siwe`  |6:6

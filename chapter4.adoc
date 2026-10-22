@@ -5,12 +5,12 @@ ifndef::ge[:ge: &#8805;]
 == Registers
 If an optional register is not implemented, the behavior is implementation-defined unless otherwise specified. An optional field in an implemented register means being WARL. If it is not programmable, it should be hardwired to value matching its meaning and should not cause any effect when written. Reserved regions are reserved for standard use. The behavior in the reserved regions is implementation-defined.
 
-.Register summary
+The following tables summarize the registers by group.
+
+.INFO registers
 [cols="<3,<6,<14",options="header"]
 |===
 |Offset |Register |Description
-
-3+|INFO
 |0x0000 | `VERSION` |Indicates the specification and the IP vendor.
 |0x0004 | `IMPLEMENTATION` | Indicates the implementation version.
 |0x0008 | `HWCFG0` |Indicates the basic configurations of current IOPMP instance.
@@ -19,14 +19,22 @@ If an optional register is not implemented, the behavior is implementation-defin
 |0x0014 | `HWCFG3` | (Optional) indicates the extended configurations of current IOPMP instance for application note.
 |0x0028 | `HWCFG_USER` | (Optional) user-defined configurations of current IOPMP instance.
 |0x002C | `ENTRYOFFSET` |Indicates the internal address offsets of each table.
+|===
 
-3+|Configuration protection
+.Configuration protection registers
+[cols="<3,<6,<14",options="header"]
+|===
+|Offset |Register |Description
 |0x0040 | `MDLCK`    | Lock register for lower MDs in the SRCMD table.
 |0x0044 | `MDLCKH`   | (Optional) lock register for higher MDs in the SRCMD table.
 |0x0048 | `MDCFGLCK` | Lock register for the MDCFG table.
 |0x004C | `ENTRYLCK` | Lock register for IOPMP entry array.
+|===
 
-3+|Error reporting
+.Error reporting registers
+[cols="<3,<6,<14",options="header"]
+|===
+|Offset |Register |Description
 |0x0060 | `ERR_CFG` | Indicates the reactions for the violations.
 |0x0064 | `ERR_INFO` | Indicates the information regarding captured violations.
 |0x0068 | `ERR_REQADDR` | Indicates lower request address regarding the first captured violation.
@@ -34,18 +42,30 @@ If an optional register is not implemented, the behavior is implementation-defin
 |0x0070 | `ERR_REQID` | Indicates the RRID and entry index regarding the first captured violation.
 |0x0080 ~ 0x009F
 | `ERR_USER(0)` ~ `ERR_USER(7)` | (Optional) user-defined violation information.
+|===
 
-3+|MDCFG table, _m_ = 0...`HWCFG0.md_num`-1
+.MDCFG table registers, _m_ = 0...`HWCFG0.md_num`-1
+[cols="<3,<6,<14",options="header"]
+|===
+|Offset |Register |Description
 |0x0800 + (_m_) × 4 | `MDCFG(_m_)`  |MD config register, which specifies the indices of IOPMP entries belonging to an MD.
+|===
 
-3+|SRCMD table, _s_ = 0...`HWCFG1.rrid_num`-1
+.SRCMD table registers, _s_ = 0...`HWCFG1.rrid_num`-1
+[cols="<3,<6,<14",options="header"]
+|===
+|Offset |Register |Description
 |0x1000 + (_s_) × 32 |`SRCMD_EN(_s_)` |
  The bitmapped MD enabling register of the RRID _s_ that `SRCMD_EN(_s_)[_m_]` indicates if the RRID is associated with MD _m_.
 
 |0x1004 + (_s_) × 32 |`SRCMD_ENH(_s_)`|
  (Optional) The bitmapped MD enabling register of the RRID _s_ that `SRCMD_ENH(_s_)[_m_]` indicates if the RRID is associated with MD (_m_+31).
+|===
 
-3+|Entry array, _i_ = 0...`HWCFG1.entry_num`-1
+.Entry array registers, _i_ = 0...`HWCFG1.entry_num`-1
+[cols="<3,<6,<14",options="header"]
+|===
+|Offset |Register |Description
 |`ENTRYOFFSET` + (_i_) × 16 | `ENTRY_ADDR(_i_)`| Bit 33:2 of address (region) for entry _i_.
 | `ENTRYOFFSET` + 0x4 + (_i_) × 16 |`ENTRY_ADDRH(_i_)` | (Optional) bit 65:34 of the address (region) for entry _i_.
 | `ENTRYOFFSET` + 0x8 + (_i_) × 16 |`ENTRY_CFG(_i_)` |The configuration of entry _i_.
