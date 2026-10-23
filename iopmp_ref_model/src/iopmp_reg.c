@@ -814,6 +814,13 @@ void write_register(iopmp_dev_t *iopmp, uint64_t offset, reg_intf_dw data, uint8
             uint32_t srcmd_reg = SRCMD_REG_INDEX(offset);
             uint32_t srcmd_idx = SRCMD_TABLE_INDEX(offset);
 
+            // SRCMD_R(H), SRCMD_W(H) and SRCMD_X(H) are implemented only if
+            // HWCFG2.sps_en is set. Otherwise, writes to them are ignored and
+            // they read zero.
+            if ((srcmd_reg >= 2) && !iopmp->reg_file.hwcfg2.sps_en) {
+                return;
+            }
+
             switch (srcmd_reg) {
             // SRCMD_EN Register
             case 0:

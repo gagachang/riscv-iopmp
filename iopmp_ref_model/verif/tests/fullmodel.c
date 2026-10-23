@@ -1108,6 +1108,25 @@ int main()
     cfg = cfg_saved;
     END_TEST();
 
+    START_TEST("SRCMD_R/W/X(H) read zero when sps_en is 0");
+    cfg_saved = cfg;
+    FAIL_IF((reset_iopmp(&iopmp, &cfg) != 0));
+    configure_srcmd_n(&iopmp, SRCMD_R, 32, 0x10, 4);
+    FAIL_IF((read_register(&iopmp, SRCMD_TABLE_BASE_OFFSET + SRCMD_R + (32 * SRCMD_REG_STRIDE), 4) != 0x10));
+    // Without the SPS extension, writes to SRCMD_R/W/X(H) are ignored
+    cfg.sps_en = false;
+    FAIL_IF((reset_iopmp(&iopmp, &cfg) != 0));
+    for (uint8_t srcmd_reg = SRCMD_R; srcmd_reg <= SRCMD_XH; srcmd_reg += 4) {
+        configure_srcmd_n(&iopmp, srcmd_reg, 32, 0x10, 4);
+        FAIL_IF((read_register(&iopmp, SRCMD_TABLE_BASE_OFFSET + srcmd_reg + (32 * SRCMD_REG_STRIDE), 4) != 0));
+    }
+    // SRCMD_EN is still implemented
+    configure_srcmd_n(&iopmp, SRCMD_EN, 32, 0x10, 4);
+    FAIL_IF((read_register(&iopmp, SRCMD_TABLE_BASE_OFFSET + SRCMD_EN + (32 * SRCMD_REG_STRIDE), 4) != 0x10));
+    // Reset configuration
+    cfg = cfg_saved;
+    END_TEST();
+
     START_TEST("RRIDSCP read/write behaviors");
     cfg_saved = cfg;
     cfg.stall_en = true;
