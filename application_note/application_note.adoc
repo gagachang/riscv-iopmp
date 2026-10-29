@@ -28,6 +28,9 @@ include::srcmd_reduction.adoc[]
 // MDCFG Table Reduction
 include::mdcfg_reduction.adoc[]
 
+// Updating the MDCFG Table
+include::mdcfg_update.adoc[]
+
 // Run out memory domains and RRID translate
 include::run_out_md.adoc[]
 
