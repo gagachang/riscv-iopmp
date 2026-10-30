@@ -148,7 +148,10 @@ The ranges above are defined by `MDCFG(_m_-1).t` and `MDCFG(_m_).t` alone, so an
 This specification does not require `MDCFG(_m_).t` to be bounded by `HWCFG1.entry_num`, so a memory domain can have a range of IOPMP entry indices that extends past the end of the IOPMP entry array. Indices beyond the array select no entry; see <<#IOPMP_ENTRY, IOPMP Entries>>. Requiring the bound would add a comparison against `HWCFG1.entry_num` on every write to `MDCFG(_m_)`, and would not improve security, because the indices beyond the array contribute no rule and therefore cannot grant access.
 ====
 
-<<#MDCFG_PROGRAMMING_GUIDE, Updating the MDCFG Table>> in the <<#APPLICATION_NOTE, Application Note>> describes how software can change several `MDCFG(_m_).t` values at run time so that the MDCFG table is non-decreasing after every register write.
+[NOTE]
+====
+<<#MDCFG_PROGRAMMING_GUIDE, Updating the MDCFG Table>> in the <<#APPLICATION_NOTE, Application Note>> describes how software can keep transactions from being checked against unintended rules while it changes several values in the MDCFG table.
+====
 
 [#TRANSACTION_CHECKING]
 === Transaction Checking
