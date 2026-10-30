@@ -3,22 +3,41 @@ ifndef::le[:le: &#8804;]
 [#MDCFG_PROGRAMMING_GUIDE]
 === Updating the MDCFG Table
 
-This section is non-normative. It applies to an IOPMP that implements the MDCFG table (`HWCFG3.mdcfg_fmt` = 0; see <<#REG_EXT_HWCFG3, Hardware Configuration 3>>) and describes how software can change several `MDCFG(_m_).t` values at run time so that the MDCFG table is non-decreasing after every register write, that is, `MDCFG(_m_-1).t` {le} `MDCFG(_m_).t` for every _m_ with 0 < _m_ < `HWCFG0.md_num`. In a non-decreasing table, no two ranges overlap, so every IOPMP entry belongs to the MD selected by its own two bounds, and a change to `MDCFG(_m_).t` moves IOPMP entries only between MD _m_ and MD _m_+1. In any other table, the ranges of several MDs can contain the same IOPMP entry, which then belongs to the lowest-indexed of those MDs (see <<#MDCFG_TABLE, MDCFG Table>>), so an RRID associated with that MD is checked against IOPMP entries written for another MD. Software should avoid such a table rather than rely on this association.
+This section is non-normative. It applies to an IOPMP that implements the MDCFG table (`HWCFG3.mdcfg_fmt` = 0; see <<#REG_EXT_HWCFG3, Hardware Configuration 3>>).
 
-Software writes the MDCFG registers in several accesses, so changing several values passes through intermediate tables, and whether each of them is non-decreasing depends on the write order.
+Changing a value in the MDCFG table changes the association of IOPMP entries with memory domains. Software writes the table in several accesses, so when it changes several values, the intermediate tables can associate IOPMP entries in ways that match neither the initial table nor the intended final table. Every intermediate table has defined behavior (see <<#MDCFG_TABLE, MDCFG Table>>), but a transaction checked against it can be granted or denied by a rule written for another memory domain.
 
-For example, let `MDCFG(0).t` to `MDCFG(3).t` be {10, 20, 30, 45} and the target be {10, 40, 42, 45}. Writing `MDCFG(1).t` = 40 first produces the intermediate table {10, 40, 30, 45}, in which `MDCFG(2).t` < `MDCFG(1).t`; writing `MDCFG(2).t` = 42 first avoids it.
+This section describes how software can keep transactions from being checked against unintended rules during an update, and a write order that bounds the memory domains an update affects. The write order keeps `MDCFG(_m_).t` non-decreasing over the memory domains being updated, that is, `MDCFG(_m_-1).t` {le} `MDCFG(_m_).t` for each of them. Keeping the table non-decreasing is a software convention, not an architectural requirement: the entry association is defined for any values in the MDCFG table (see <<#MDCFG_TABLE, MDCFG Table>>), and a decrease can be intentional. For example, with five memory domains, the table {30, 40, 50, 0, 0} leaves MD 3 and MD 4 unused, and software need not raise `MDCFG(3).t` and `MDCFG(4).t` to 50 only to make the whole table non-decreasing. The write order therefore applies only to the memory domains being updated. It bounds which memory domains an update affects; it does not by itself keep transactions from being checked against unintended rules, which <<#MDCFG_AFFECTED_MDS, Affected Memory Domains>> addresses.
 
-The order below assumes that the current table is non-decreasing. After reset, `MDCFG(_m_).t` can hold any value unless the implementation defines it, so the first programming of the table needs no particular order as long as it is completed while `HWCFG0.enable` is 0, when the IOPMP checks no transaction. If `HWCFG0.enable` is hardwired to 1, the IOPMP checks transactions from reset, so software should read the table first. If the reset values form a non-decreasing table, the order below applies; for example, from an all-zero table every value increases, so software writes from the highest index down to index 0. If some `MDCFG(_m_).t` in the current table is below `MDCFG(_m_-1).t`, whether from reset or from an erroneous write, no write order keeps every intermediate table non-decreasing, and software should treat every memory domain as affected during that update, as described in the notes at the end of this section.
+[#MDCFG_AFFECTED_MDS]
+==== Affected Memory Domains
 
+An IOPMP entry that moves between memory domains keeps its contents, so software should update the table with the transferred IOPMP entries set to OFF or already programmed for their new memory domain, and should keep transactions from being checked against the affected memory domains during the update, for example, by stalling them as described in <<Program_IOPMPs, Safe Runtime Configuration>> or by deassociating them from every RRID in the SRCMD table beforehand.
+
+With the write order in <<#MDCFG_WRITE_ORDER, Recommended Write Order>>, the affected memory domains are MD _m_ and MD _m_+1, if it exists, for every changed `MDCFG(_m_).t`. Otherwise, software should determine the affected memory domains from the entry associations of every intermediate table, or treat every memory domain as affected.
+
+[NOTE]
+====
+If software reprograms the address of a transferred IOPMP entry _i_ and IOPMP entry _i_+1 selects TOR, the region of IOPMP entry _i_+1 changes as well, so the affected memory domains also include the memory domain of IOPMP entry _i_+1.
+====
+
+[#MDCFG_WRITE_ORDER]
 ==== Recommended Write Order
 
-Let `mdcfg_t_current[m]` be the current value of `MDCFG(_m_).t` and `mdcfg_t_next[m]` be its target value, where both tables are non-decreasing. Software should write only the values that change, in the following order:
+Let the update cover the first _n_ memory domains, MD 0 to MD _n_-1, where 1 {le} _n_ {le} `HWCFG0.md_num`; this section calls them the prefix. Let `mdcfg_t_current[m]` be the current value of `MDCFG(_m_).t` and `mdcfg_t_next[m]` its target value for _m_ < _n_, where both are non-decreasing over the prefix. If _n_ < `HWCFG0.md_num`, the remaining registers are not written, and their memory domains must stay unused throughout the update; `MDCFG(_m_).t` = 0 for every remaining memory domain is sufficient, because it gives them empty ranges for any value of `MDCFG(_n_-1).t`. A remaining memory domain that is merely empty now is not enough: with {30, 40, 50, 45}, MD 3 is empty, but writing `MDCFG(2).t` = 42 gives it IOPMP entries 42 to 44.
 
-. every value that increases (`mdcfg_t_next[m]` > `mdcfg_t_current[m]`), from the highest index down to index 0; and
-. then every value that decreases (`mdcfg_t_next[m]` < `mdcfg_t_current[m]`), from index 0 up to the highest index.
+In a non-decreasing table, no range overlaps another, so each IOPMP entry whose index lies in the range of a memory domain belongs to that memory domain. A change to `MDCFG(_m_).t` that keeps the table non-decreasing therefore transfers IOPMP entries only between MD _m_ and MD _m_+1. For the last value of the prefix, `MDCFG(_n_-1).t`, the change associates previously unassociated IOPMP entries with MD _n_-1 or leaves some of its IOPMP entries unassociated, because MD _n_ does not exist or stays unused.
 
-With this order, every intermediate table is non-decreasing. The two steps do not interfere with each other.
+Whether an intermediate table is non-decreasing depends on the write order. For example, let `MDCFG(0).t` to `MDCFG(3).t` be {10, 20, 30, 45} and the target be {10, 40, 42, 45}. Writing `MDCFG(1).t` = 40 first produces the intermediate table {10, 40, 30, 45}, in which `MDCFG(2).t` < `MDCFG(1).t`; writing `MDCFG(2).t` = 42 first avoids it.
+
+Software should write only the values that change, in the following order:
+
+. every value that increases (`mdcfg_t_next[m]` > `mdcfg_t_current[m]`), from index _n_-1 down to index 0; and
+. then every value that decreases (`mdcfg_t_next[m]` < `mdcfg_t_current[m]`), from index 0 up to index _n_-1.
+
+With this order, every intermediate table is non-decreasing over the prefix. The two steps do not interfere with each other.
+
+If the current table is not non-decreasing over the prefix, whether from reset or from an erroneous write, this guarantee does not apply, and software should determine the affected memory domains as described in <<#MDCFG_AFFECTED_MDS, Affected Memory Domains>>. After reset, `MDCFG(_m_).t` can hold any value unless the implementation defines it, so the first programming of the table needs no particular order as long as it is completed while `HWCFG0.enable` is 0, when the IOPMP checks no transaction. If `HWCFG0.enable` is hardwired to 1, the IOPMP checks transactions from reset, so software should read the table first; for example, from an all-zero table every value increases, so software writes from index _n_-1 down to index 0.
 
 [NOTE]
 ====
@@ -32,12 +51,17 @@ In the function below, `WRITE_MDCFG_T(m, t)` writes the value `t` to `MDCFG(_m_)
 [source,c]
 ----
 /*
- * Rewrite the MDCFG table from mdcfg_t_current[] to mdcfg_t_next[] so
- * that the table is non-decreasing (t(m) >= t(m-1)) after every write.
+ * Rewrite MDCFG(0).t to MDCFG(md_count - 1).t from mdcfg_t_current[] to
+ * mdcfg_t_next[] so that they are non-decreasing (t(m) >= t(m-1)) after
+ * every write.
  *
  * Preconditions (not checked here):
- *   - mdcfg_t_current[]: software's cached value of the table, matching the
- *     device and non-decreasing.
+ *   - 1 <= md_count <= HWCFG0.md_num. If md_count < HWCFG0.md_num, the
+ *     registers from MDCFG(md_count) on are not written, and their MDs
+ *     must stay unused throughout the update; MDCFG(m).t == 0 for every
+ *     m >= md_count is sufficient.
+ *   - mdcfg_t_current[]: software's cached values of the first md_count
+ *     registers, matching the device and non-decreasing.
  *   - mdcfg_t_next[]: validated by software beforehand:
  *       mdcfg_t_next[m] >= mdcfg_t_next[m-1],
  *       mdcfg_t_next[m] == mdcfg_t_current[m] for m < MDCFGLCK.f,
@@ -51,29 +75,19 @@ In the function below, `WRITE_MDCFG_T(m, t)` writes the value `t` to `MDCFG(_m_)
  *     the update has been verified.
  *   - WRITE_MDCFG_T(m, t) reaches the device in program order.
  */
-void update_mdcfg_properly(const uint16_t *mdcfg_t_current,
-                           const uint16_t *mdcfg_t_next, int md_num)
+void update_mdcfg_prefix(const uint16_t *mdcfg_t_current,
+                         const uint16_t *mdcfg_t_next, int md_count)
 {
     /* Increases, highest index first. */
-    for (int i = md_num - 1; i >= 0; i--)
+    for (int i = md_count - 1; i >= 0; i--)
         if (mdcfg_t_next[i] > mdcfg_t_current[i])
             WRITE_MDCFG_T((uint16_t)i, mdcfg_t_next[i]);
 
     /* Decreases, lowest index first. */
-    for (int i = 0; i < md_num; i++)
+    for (int i = 0; i < md_count; i++)
         if (mdcfg_t_next[i] < mdcfg_t_current[i])
             WRITE_MDCFG_T((uint16_t)i, mdcfg_t_next[i]);
 }
 ----
 
-Because `MDCFG(_m_).t` is WARL, software should write only values that the implementation accepts unchanged, as documented by the implementation or as determined by reading the table back, for example, during bring-up. If software verifies an update by reading the table back, it should complete the verification before it allows other writes to the MDCFG table and before it lets transactions be checked against the affected memory domains again, as described in the notes at the end of this section.
-
-[NOTE]
-====
-The write order only keeps the table non-decreasing. An IOPMP entry that moves between memory domains keeps its contents, so a transaction checked against an intermediate table can be granted or denied by a rule written for another memory domain. Software should therefore update the table with the transferred IOPMP entries set to OFF or already programmed for their new memory domain, and keep transactions from being checked against the affected memory domains during the update, that is, MD _m_ and MD _m_+1 for every changed `MDCFG(_m_).t`, for example, by stalling them as described in <<Program_IOPMPs, Safe Runtime Configuration>> or by deassociating them from every RRID in the SRCMD table beforehand. If software reads the table back to verify the update, it should fence the reads after the final write and before the write that resumes the transactions.
-====
-
-[NOTE]
-====
-If software reprograms the address of a transferred IOPMP entry _i_ and IOPMP entry _i_+1 selects TOR, the region of IOPMP entry _i_+1 changes as well, so the affected memory domains also include the memory domain of IOPMP entry _i_+1.
-====
+Because `MDCFG(_m_).t` is WARL, software should write only values that the implementation accepts unchanged, as documented by the implementation or as determined by reading the table back, for example, during bring-up. If software verifies an update by reading the table back, it should complete the verification before it allows other writes to the MDCFG table and before it lets transactions be checked against the affected memory domains again, and it should fence the reads after the final write and before the write that resumes the transactions.
