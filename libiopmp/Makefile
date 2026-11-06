@@ -51,6 +51,10 @@ CFLAGS	+= --coverage
 CFLAGS	+= -DENABLE_IO_WEAK_FUNCTIONS
 endif
 
+ifeq ($(CFG_LIBIOPMP_CACHE_MDCFG),y)
+CFLAGS	+= -DCFG_LIBIOPMP_CACHE_MDCFG
+endif
+
 ARFLAGS	= rcs
 
 # Check if verbosity is ON for build process
