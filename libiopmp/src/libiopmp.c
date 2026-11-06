@@ -1899,6 +1899,114 @@ static enum iopmp_error prepare_md_entry_tops(IOPMP_t *iopmp,
     return IOPMP_OK;
 }
 
+/**
+ * \brief Write MDCFG(mdidx).t and read it back
+ *
+ * \param[in] iopmp             The IOPMP instance
+ * \param[in] mdidx             The index of the MD
+ * \param[in,out] top           Input the top to write. Output the actual top
+ *
+ * \retval IOPMP_OK if the actual top is the written one
+ * \retval IOPMP_ERR_ILLEGAL_VALUE if the actual top differs
+ */
+static enum iopmp_error set_md_entry_top(IOPMP_t *iopmp, uint32_t mdidx,
+                                         uint16_t *top)
+{
+    enum iopmp_error ret;
+    uint32_t entry_top = *top;
+
+    /* This operation is mandatory for MDCFG_FMT_0 */
+    if ((iopmp->ops_override != NULL) &&
+        (iopmp->ops_override->set_md_entry_top != NULL)) {
+        ret = iopmp->ops_override->set_md_entry_top(iopmp, mdidx, &entry_top);
+    } else {
+        ret = mdcfg_fmt_0_set_md_entry_top(iopmp, mdidx, &entry_top);
+    }
+    *top = (uint16_t)entry_top;
+
+    return ret;
+}
+
+/**
+ * \brief Write MDCFG(mdidx_start) ~ MDCFG(mdidx_start + md_num - 1) so that no
+ *        ranges overlap in between
+ *
+ * Only the MDs whose tops change are written, each once. If no ranges overlap
+ * before the update, the order below keeps every intermediate table free of
+ * overlaps:
+ *
+ * 1. Every top that goes down, from the lowest index up.
+ * 2. Every top that goes up and is the highest one so far, that is, not below
+ *    the top of any lower MD, from the highest index down.
+ * 3. Every other top that goes up, from the lowest index up. Such an MD, like
+ *    MD(3) and MD(4) in {30, 40, 50, 0, 0}, owns no entry and takes its lower
+ *    bound from the MD before it, which is written first.
+ *
+ * \param[in] iopmp             The IOPMP instance
+ * \param[in] mdidx_start       The start index of target MDs
+ * \param[in] md_num            The number of target MDs, at least 1
+ * \param[in,out] tops          Input the current MDCFG table. Output the
+ *                              actual MDCFG table
+ * \param[in] next_tops         The MDCFG table to write
+ *
+ * \retval IOPMP_OK if every write succeeds
+ * \retval IOPMP_ERR_ILLEGAL_VALUE if an MD reads back a different top. No later
+ *         MD is written
+ */
+static enum iopmp_error write_md_entry_tops(IOPMP_t *iopmp,
+                                            uint32_t mdidx_start,
+                                            uint32_t md_num, uint16_t *tops,
+                                            const uint16_t *next_tops)
+{
+    enum iopmp_error ret;
+    uint32_t mdidx_end = mdidx_start + md_num - 1U;
+    uint32_t highest = 0;
+    uint64_t below_highest = 0;
+    uint32_t m;
+
+    /* Find the MDs below the top of a lower MD before writing any */
+    for (m = 0; m <= mdidx_end; m++) {
+        if (tops[m] < highest) {
+            below_highest |= (uint64_t)1U << m;
+        } else {
+            highest = tops[m];
+        }
+    }
+
+    for (m = mdidx_start; m <= mdidx_end; m++) {
+        if (next_tops[m] < tops[m]) {
+            tops[m] = next_tops[m];
+            ret = set_md_entry_top(iopmp, m, &tops[m]);
+            if (ret != IOPMP_OK) {
+                return ret;
+            }
+        }
+    }
+
+    for (m = mdidx_end + 1U; m > mdidx_start; m--) {
+        if ((next_tops[m - 1U] > tops[m - 1U]) &&
+            (((below_highest >> (m - 1U)) & 1U) == 0U)) {
+            tops[m - 1U] = next_tops[m - 1U];
+            ret = set_md_entry_top(iopmp, m - 1U, &tops[m - 1U]);
+            if (ret != IOPMP_OK) {
+                return ret;
+            }
+        }
+    }
+
+    for (m = mdidx_start; m <= mdidx_end; m++) {
+        if (next_tops[m] > tops[m]) {
+            tops[m] = next_tops[m];
+            ret = set_md_entry_top(iopmp, m, &tops[m]);
+            if (ret != IOPMP_OK) {
+                return ret;
+            }
+        }
+    }
+
+    return IOPMP_OK;
+}
+
 enum iopmp_error iopmp_set_md_entry_association_multi(IOPMP_t *iopmp,
                                                       uint32_t mdidx_start,
                                                       uint32_t *num_entries,
@@ -1938,26 +2046,13 @@ enum iopmp_error iopmp_set_md_entry_association_multi(IOPMP_t *iopmp,
         return ret;
     }
 
+    ret = write_md_entry_tops(iopmp, mdidx_start, md_num, tops, next_tops);
+
+    /* Return the actual number of entries of every target MD */
     prev_top = (mdidx_start != 0U) ? tops[mdidx_start - 1U] : 0U;
     for (uint32_t m = 0; m < md_num; m++) {
-        this_top = next_tops[mdidx_start + m];
-        /* This operation is mandatory for MDCFG_FMT_0 */
-        if ((iopmp->ops_override != NULL) &&
-            (iopmp->ops_override->set_md_entry_top != NULL)) {
-            ret = iopmp->ops_override->set_md_entry_top(iopmp,
-                                                        mdidx_start + m,
-                                                        &this_top);
-        } else {
-            ret = mdcfg_fmt_0_set_md_entry_top(iopmp, mdidx_start + m,
-                                               &this_top);
-        }
-        /* Return actual number of entries */
-        num_entries[m] = this_top - prev_top;
-        if (ret != IOPMP_OK) {
-            return ret;
-        }
-
-        /* Update previous top */
+        this_top = tops[mdidx_start + m];
+        num_entries[m] = (this_top > prev_top) ? (this_top - prev_top) : 0U;
         prev_top = this_top;
     }
 
