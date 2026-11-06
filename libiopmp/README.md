@@ -24,6 +24,11 @@ turn off this option.
 * `CFG_IOPMP_DRV_VENDOR_EXAMPLE`: Turn on this option to build the worked
 example of a vendor driver in `src/iopmp_drv_vendor_example.c`. It is not part
 of the default build; see [Vendor drivers](#vendor-drivers) below
+* `CFG_LIBIOPMP_CACHE_MDCFG`: Turn on this option to cache the MDCFG table in
+`IOPMP_t`, so that MDCFG updates and lookups read no MDCFG register. Nothing but
+`libiopmp` may then write the MDCFG table, and every file including
+`libiopmp.h` must be built with the same setting, because the option changes
+the size of `IOPMP_t`
 
 ## Compilation
 
