@@ -75,6 +75,13 @@ struct iopmp_instance {
     uint8_t mdcfglck_f;
     /** Cache of ENTRYLCK.f */
     uint16_t entrylck_f;
+#ifdef CFG_LIBIOPMP_CACHE_MDCFG
+    /**
+     * Cache of MDCFG(0).t ~ MDCFG(md_num - 1).t when mdcfg_fmt=0. Nothing but
+     * this instance may write the MDCFG table
+     */
+    uint16_t mdcfg_t[IOPMP_MD_NUM_MAX];
+#endif
 
     /**
      * Cache of {ERR_MSIADDRH, ERR_MSIADDR}. If HWCFG0.addrh_en=0, this member

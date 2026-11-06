@@ -15,30 +15,35 @@ iopmp_dev_t iopmp_dev = {0};
 iopmp_cfg_t cfg = {0};
 uint8_t intrpt;
 
-/* MDCFG writes that io_write32() records while mdcfg_log_on is set */
+/* MDCFG writes that io_write32() records, and MDCFG reads that io_read32()
+ * counts, while mdcfg_log_on is set */
 #define MDCFG_LOG_MAX       (2 * IOPMP_MAX_MD_NUM)
+#define IS_MDCFG_ADDR(addr) (((addr) >= MDCFG_TABLE_BASE_OFFSET) && \
+                             ((addr) < MDCFG_TABLE_BASE_OFFSET + (4 * IOPMP_MAX_MD_NUM)))
 static bool mdcfg_log_on;
 static uint32_t mdcfg_log_len;
 static uint32_t mdcfg_log_md[MDCFG_LOG_MAX];
 static uint32_t mdcfg_log_top[MDCFG_LOG_MAX];
+static uint32_t mdcfg_log_reads;
 
 static void mdcfg_log_start(void)
 {
     mdcfg_log_len = 0;
+    mdcfg_log_reads = 0;
     mdcfg_log_on = true;
 }
 
 /* Override libiopmp IO functions */
 uint32_t io_read32(uintptr_t addr)
 {
+    if (mdcfg_log_on && IS_MDCFG_ADDR(addr))
+        mdcfg_log_reads++;
     return read_register(&iopmp_dev, addr, 4);
 }
 
 void io_write32(uintptr_t addr, uint32_t val)
 {
-    if (mdcfg_log_on && (addr >= MDCFG_TABLE_BASE_OFFSET) &&
-        (addr < MDCFG_TABLE_BASE_OFFSET + (4 * IOPMP_MAX_MD_NUM)) &&
-        (mdcfg_log_len < MDCFG_LOG_MAX)) {
+    if (mdcfg_log_on && IS_MDCFG_ADDR(addr) && (mdcfg_log_len < MDCFG_LOG_MAX)) {
         mdcfg_log_md[mdcfg_log_len] = (addr - MDCFG_TABLE_BASE_OFFSET) / 4;
         mdcfg_log_top[mdcfg_log_len] = val & 0xFFFF;
         mdcfg_log_len++;
@@ -2733,7 +2738,27 @@ int main(void)
         FAIL_IF(!mdcfg_log_is(expect, 1));
         FAIL_IF(num_entries[0] != ENTRY_PER_MD || num_entries[1] != ENTRY_PER_MD);
     }
+    /* The getter reports what the IOPMP holds, with or without the cache */
+    ret = iopmp_get_md_entry_association(&iopmp, 1, &val_u32, &val_u32_2);
+    FAIL_IF(ret != IOPMP_OK || val_u32 != ENTRY_PER_MD || val_u32_2 != ENTRY_PER_MD);
     iopmp.ops_override = NULL;
+    END_TEST();
+
+    START_TEST("An MDCFG update reads the table only without the cache");
+    FAIL_IF(libiopmp_setup(&iopmp, &cfg) != IOPMP_OK);
+    FAIL_IF(program_full_mdcfg_table(&iopmp) != 0);
+    val_u32 = ENTRY_PER_MD / 2;
+    mdcfg_log_start();
+    FAIL_IF(iopmp_set_md_entry_association(&iopmp, 0, &val_u32) != IOPMP_OK);
+    mdcfg_log_on = false;
+    FAIL_IF(mdcfg_log_len != 1);
+#ifdef CFG_LIBIOPMP_CACHE_MDCFG
+    /* Only the read-back of MDCFG(0) */
+    FAIL_IF(mdcfg_log_reads != 1);
+#else
+    /* The whole MDCFG table, then the read-back of MDCFG(0) */
+    FAIL_IF(mdcfg_log_reads != CFG_MD_NUM + 1);
+#endif
     END_TEST();
 
     START_TEST("Lock MDCFG and reject a later change");

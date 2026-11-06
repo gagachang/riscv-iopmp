@@ -32,6 +32,10 @@ LIBIOPMP_CFLAGS += -I$(LIBIOPMP_DIR)/include -I$(LIBIOPMP_DIR)/src
 LIBIOPMP_LDFLAGS += $(LIBIOPMP) -lgcov
 # Prerequisite
 LIBIOPMP_PREREQ += $(LIBIOPMP)
+# The tests have to see the IOPMP_t that libiopmp is built with
+ifeq ($(CFG_LIBIOPMP_CACHE_MDCFG),y)
+LIBIOPMP_CFLAGS += -DCFG_LIBIOPMP_CACHE_MDCFG
+endif
 endif
 
 # Compiler and flags
