@@ -15,6 +15,19 @@ iopmp_dev_t iopmp_dev = {0};
 iopmp_cfg_t cfg = {0};
 uint8_t intrpt;
 
+/* MDCFG writes that io_write32() records while mdcfg_log_on is set */
+#define MDCFG_LOG_MAX       (2 * IOPMP_MAX_MD_NUM)
+static bool mdcfg_log_on;
+static uint32_t mdcfg_log_len;
+static uint32_t mdcfg_log_md[MDCFG_LOG_MAX];
+static uint32_t mdcfg_log_top[MDCFG_LOG_MAX];
+
+static void mdcfg_log_start(void)
+{
+    mdcfg_log_len = 0;
+    mdcfg_log_on = true;
+}
+
 /* Override libiopmp IO functions */
 uint32_t io_read32(uintptr_t addr)
 {
@@ -23,6 +36,13 @@ uint32_t io_read32(uintptr_t addr)
 
 void io_write32(uintptr_t addr, uint32_t val)
 {
+    if (mdcfg_log_on && (addr >= MDCFG_TABLE_BASE_OFFSET) &&
+        (addr < MDCFG_TABLE_BASE_OFFSET + (4 * IOPMP_MAX_MD_NUM)) &&
+        (mdcfg_log_len < MDCFG_LOG_MAX)) {
+        mdcfg_log_md[mdcfg_log_len] = (addr - MDCFG_TABLE_BASE_OFFSET) / 4;
+        mdcfg_log_top[mdcfg_log_len] = val & 0xFFFF;
+        mdcfg_log_len++;
+    }
     return write_register(&iopmp_dev, addr, val, 4);
 }
 
@@ -104,6 +124,54 @@ static enum iopmp_error set_model_mdcfg(IOPMP_t *iopmp, const uint32_t *tops,
     return iopmp_init(iopmp, 0, cfg.srcmd_fmt, cfg.mdcfg_fmt,
                       IOPMP_IMPID_NOT_SPECIFIED);
 }
+
+/* True if the range of an MD in @tops overlaps the range of a lower MD, that
+ * is, it is not empty and begins below the top of some lower MD */
+static bool tops_overlap(const uint32_t *tops, uint32_t n)
+{
+    uint32_t highest = 0;
+
+    for (uint32_t m = 1; m < n; m++) {
+        if (tops[m - 1] > highest)
+            highest = tops[m - 1];
+        if ((tops[m] > tops[m - 1]) && (tops[m - 1] < highest))
+            return true;
+    }
+
+    return false;
+}
+
+/* True if the recorded MDCFG writes are exactly the (MD, top) pairs in
+ * @expect */
+static bool mdcfg_log_is(const uint32_t expect[][2], uint32_t n)
+{
+    if (mdcfg_log_len != n)
+        return false;
+    for (uint32_t i = 0; i < n; i++) {
+        if ((mdcfg_log_md[i] != expect[i][0]) ||
+            (mdcfg_log_top[i] != expect[i][1]))
+            return false;
+    }
+
+    return true;
+}
+
+/* An MDCFG(m).t that only holds even values, to test a WARL mismatch */
+static enum iopmp_error even_set_md_entry_top(IOPMP_t *iopmp, uint32_t mdidx,
+                                              uint32_t *entry_top)
+{
+    uint32_t req = *entry_top;
+
+    (void)iopmp;
+    io_write32(MDCFG_TABLE_BASE_OFFSET + (mdidx * 4), req & ~1U);
+    *entry_top = io_read32(MDCFG_TABLE_BASE_OFFSET + (mdidx * 4)) & 0xFFFF;
+
+    return (*entry_top == req) ? IOPMP_OK : IOPMP_ERR_ILLEGAL_VALUE;
+}
+
+static struct iopmp_operations_override even_mdcfg_ops_override = {
+    .set_md_entry_top = even_set_md_entry_top,
+};
 
 int main(void)
 {
@@ -2528,6 +2596,144 @@ int main(void)
     }
     ret = iopmp_get_md_entry_association(&iopmp, 3, &val_u32, &val_u32_2);
     FAIL_IF(ret != IOPMP_OK || val_u32 != 24 || val_u32_2 != ENTRY_PER_MD);
+    END_TEST();
+
+    START_TEST("Set MD/entry association orders the MDCFG writes");
+    FAIL_IF(libiopmp_setup(&iopmp, &cfg) != IOPMP_OK);
+    {
+        /* Increases go from the top down: writing MDCFG(1).t = 40 first would
+         * leave MDCFG(2).t = 30 below it */
+        uint32_t tops[4] = {10, 20, 30, 45};
+        uint32_t num_entries[4] = {10, 30, 2, 3};
+        const uint32_t expect[][2] = {{2, 42}, {1, 40}};
+        FAIL_IF(set_model_mdcfg(&iopmp, tops, 4) != IOPMP_OK);
+        mdcfg_log_start();
+        ret = iopmp_set_md_entry_association_multi(&iopmp, 0, num_entries, 4);
+        mdcfg_log_on = false;
+        FAIL_IF(ret != IOPMP_OK || !mdcfg_log_is(expect, 2));
+    }
+    {
+        /* Decreases go from the bottom up, and MDCFG(3).t stays unwritten */
+        uint32_t num_entries[4] = {5, 5, 10, 25};
+        const uint32_t expect[][2] = {{0, 5}, {1, 10}, {2, 20}};
+        mdcfg_log_start();
+        ret = iopmp_set_md_entry_association_multi(&iopmp, 0, num_entries, 4);
+        mdcfg_log_on = false;
+        FAIL_IF(ret != IOPMP_OK || !mdcfg_log_is(expect, 3));
+    }
+    {
+        /* MD(3) and MD(4) of {30, 40, 50, 0, 0} take their lower bounds from
+         * the MD before them, so they go up from the bottom */
+        uint32_t tops[5] = {30, 40, 50, 0, 0};
+        uint32_t num_entries[2] = {10, 10};
+        const uint32_t expect[][2] = {{3, 60}, {4, 70}};
+        FAIL_IF(set_model_mdcfg(&iopmp, tops, 5) != IOPMP_OK);
+        mdcfg_log_start();
+        ret = iopmp_set_md_entry_association_multi(&iopmp, 3, num_entries, 2);
+        mdcfg_log_on = false;
+        FAIL_IF(ret != IOPMP_OK || !mdcfg_log_is(expect, 2));
+    }
+    {
+        /* MDCFG(3).t goes up only after MDCFG(1).t has gone down, or MD(3)
+         * would take entries 0 ~ 9 from MD(1) */
+        uint32_t tops[5] = {0, 10, 0, 0, 0};
+        uint32_t num_entries[4] = {0, 0, 0, 10};
+        const uint32_t expect[][2] = {{1, 0}, {3, 10}};
+        FAIL_IF(set_model_mdcfg(&iopmp, tops, 5) != IOPMP_OK);
+        mdcfg_log_start();
+        ret = iopmp_set_md_entry_association_multi(&iopmp, 0, num_entries, 4);
+        mdcfg_log_on = false;
+        FAIL_IF(ret != IOPMP_OK || !mdcfg_log_is(expect, 2));
+    }
+    END_TEST();
+
+    START_TEST("MDCFG updates never pass through overlapping ranges");
+    FAIL_IF(libiopmp_setup(&iopmp, &cfg) != IOPMP_OK);
+    {
+        /* Every table of MD(0) ~ MD(3) with tops 0 ~ 5, and every update of
+         * MDs in it that keeps the tops within 5. The later MDs stay 0 */
+        enum { N = 4, V = 5 };
+        uint32_t cur[N], next[N], tops[N], num_entries[N], counts[N];
+
+        for (uint32_t code = 0; code < (V + 1) * (V + 1) * (V + 1) * (V + 1); code++) {
+            for (uint32_t m = 0, c = code; m < N; m++, c /= (V + 1))
+                cur[m] = c % (V + 1);
+            bool cur_overlap = tops_overlap(cur, N);
+            for (uint32_t start = 0; start < N; start++) {
+                for (uint32_t k = 1; start + k <= N; k++) {
+                    uint32_t combos = 1;
+                    for (uint32_t i = 0; i < k; i++)
+                        combos *= V + 1;
+                    for (uint32_t cc = 0; cc < combos; cc++) {
+                        uint32_t sum = 0, top;
+                        for (uint32_t i = 0, c = cc; i < k; i++, c /= (V + 1)) {
+                            counts[i] = c % (V + 1);
+                            sum += counts[i];
+                        }
+                        if (sum > V)
+                            continue;
+                        memcpy(next, cur, sizeof(next));
+                        top = (start != 0) ? cur[start - 1] : 0;
+                        for (uint32_t i = 0; i < k; i++) {
+                            top += counts[i];
+                            next[start + i] = top;
+                        }
+
+                        FAIL_IF(set_model_mdcfg(&iopmp, cur, N) != IOPMP_OK);
+                        memcpy(num_entries, counts, sizeof(num_entries));
+                        mdcfg_log_start();
+                        ret = iopmp_set_md_entry_association_multi(&iopmp, start,
+                                                                   num_entries, k);
+                        mdcfg_log_on = false;
+                        if (tops_overlap(next, N)) {
+                            FAIL_IF(ret != IOPMP_ERR_NOT_ALLOWED);
+                            FAIL_IF(mdcfg_log_len != 0);
+                            continue;
+                        }
+                        FAIL_IF(ret != IOPMP_OK);
+                        for (uint32_t i = 0; i < k; i++)
+                            FAIL_IF(num_entries[i] != counts[i]);
+
+                        /* Replay the writes: each changed MD once, and no
+                         * overlap in between unless there was one before */
+                        uint32_t written = 0;
+                        memcpy(tops, cur, sizeof(tops));
+                        for (uint32_t i = 0; i < mdcfg_log_len; i++) {
+                            uint32_t m = mdcfg_log_md[i];
+                            FAIL_IF(m >= N || ((written >> m) & 1));
+                            written |= 1U << m;
+                            tops[m] = mdcfg_log_top[i];
+                            FAIL_IF(!cur_overlap && tops_overlap(tops, N));
+                        }
+                        for (uint32_t m = 0; m < N; m++) {
+                            FAIL_IF(tops[m] != next[m]);
+                            FAIL_IF(((written >> m) & 1) != (cur[m] != next[m]));
+                            FAIL_IF(read_register(&iopmp_dev, MDCFG_TABLE_BASE_OFFSET + (m * 4), 4) != next[m]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    END_TEST();
+
+    START_TEST("Set MD/entry association stops at a WARL mismatch");
+    FAIL_IF(libiopmp_setup(&iopmp, &cfg) != IOPMP_OK);
+    iopmp.ops_override = &even_mdcfg_ops_override;
+    FAIL_IF(program_full_mdcfg_table(&iopmp) != 0);
+    {
+        /* MDCFG(1).t = 17 is written first and reads back 16, so MDCFG(0).t
+         * stays 8 */
+        uint32_t num_entries[2] = {9, 8};
+        const uint32_t expect[][2] = {{1, 16}};
+        mdcfg_log_start();
+        ret = iopmp_set_md_entry_association_multi(&iopmp, 0, num_entries, 2);
+        mdcfg_log_on = false;
+        FAIL_IF(ret != IOPMP_ERR_ILLEGAL_VALUE);
+        FAIL_IF(!mdcfg_log_is(expect, 1));
+        FAIL_IF(num_entries[0] != ENTRY_PER_MD || num_entries[1] != ENTRY_PER_MD);
+    }
+    iopmp.ops_override = NULL;
     END_TEST();
 
     START_TEST("Lock MDCFG and reject a later change");
